@@ -1,0 +1,16 @@
+[package]
+name = "newsman"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[env]
+DATABASE_URL='mysql://root:password@localhost/emails'
+
+[dependencies]
+dotenv = "0.15.0"
+env_logger = "0.10.0"
+lettre = "0.10.4"
+log = "0.4.18"
+sqlx = { version = "0.6.3", features = ["mysql", "runtime-tokio-native-tls"] }
+tokio = "1.28.2"
