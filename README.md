@@ -24,6 +24,8 @@ set before the program works.
 
 ```
 $ touch .env
-$ echo "DATABASE_URL=database_url\nNEWSLETTER_DIR=newsletter_dir" >> .env
+$ echo "DATABASE_URL=database_url\nNEWSLETTER_DIR=newsletter_dir\n
+SMTP_USERNAME=smtp_username\nSMTP_PASSWORD=smtp_password\nSENDER=sender\n
+RELAY=relay" >> .env
 
 ```
