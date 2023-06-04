@@ -42,20 +42,15 @@ mod tests {
     }
 
     use lettre::transport::smtp::authentication::Credentials; 
-    use lettre::{Message, SmtpTransport, Transport};
-    use dotenv::dotenv;
+    use lettre::{SmtpTransport, Transport};
+    use lettre::message::{header::ContentType, Message};
 
     #[tokio::test]
     async fn new_job() {
-        dotenv().ok();
-        let smtp_username: String = std::env::var("SMTP_USERNAME")
-            .expect("SMTP_USERNAME needs to be set");
-        let smtp_password: String = std::env::var("SMTP_PASSWORD")
-            .expect("SMTP_PASSWORD needs to be set");
-        let sender: String = std::env::var("SENDER")
-            .expect("SENDER needs to be set");
-        let relay: String = std::env::var("RELAY")
-            .expect("RELAY must be set");
+        let smtp_username: String = String::from("username");
+        let smtp_password: String = String::from("password");
+        let sender: String = String::from("sender");
+        let relay: String = String::from("relay");
 
         let creds = Credentials::new(smtp_username, smtp_password);
         let mailer = SmtpTransport::relay(&relay) 
@@ -67,8 +62,10 @@ mod tests {
             .from(sender.clone().parse().unwrap()) 
             .to("test@test.com".parse().unwrap()) 
             .subject("Newsletter") 
-            .body(String::from("Newsletter test")) 
+            .header(ContentType::TEXT_PLAIN)
+            .body(String::from("Newsletter test"))
             .unwrap(); 
+
         match mailer.send(&email) { 
               Ok(_) => assert!(true), 
               Err(e) => panic!("Could not send email: {:?}", e), 

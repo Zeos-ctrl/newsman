@@ -10,7 +10,7 @@ DATABASE_URL='mysql://root:password@localhost/emails'
 [dependencies]
 dotenv = "0.15.0"
 env_logger = "0.10.0"
-lettre = "0.10.4"
+lettre = { version = "0.10.4", features = ["builder"] }
 log = "0.4.18"
 sqlx = { version = "0.6.3", features = ["mysql", "runtime-tokio-native-tls"] }
 tokio = { version = "1.28.2", features = ["macros"] }

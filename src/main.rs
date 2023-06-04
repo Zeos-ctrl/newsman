@@ -6,7 +6,8 @@ use sqlx::mysql::MySqlPoolOptions;
 use clap::Parser;
 use log::{debug, LevelFilter};
 use lettre::transport::smtp::authentication::Credentials; 
-use lettre::{Message, SmtpTransport, Transport};
+use lettre::{SmtpTransport, Transport};
+use lettre::message::{header::ContentType, Message};
 
 // Add email to database
 async fn add_email(email: String, database: String) -> Result<String, String>{
@@ -48,31 +49,16 @@ struct _MailingList {
     email: String,
 }
 
-// Need to turn into background process
-async fn new_job(newsletter: String, database: String) {
+// Fetch data and delay for daemon
+async fn new_job(newsletter: String, database: String, delay: u8) {
     let newsletter_dir: String = std::env::var("NEWSLETTER_DIR")
         .expect("Set the newsletter directory");
     debug!("{}",newsletter_dir.clone());
-    let smtp_username: String = std::env::var("SMTP_USERNAME")
-        .expect("SMTP_USERNAME needs to be set");
-    debug!("{}",smtp_username.clone());
-    let smtp_password: String = std::env::var("SMTP_PASSWORD")
-        .expect("SMTP_PASSWORD needs to be set");
-    debug!("{}",smtp_password.clone());
     let sender: String = std::env::var("SENDER")
         .expect("SENDER needs to be set");
     debug!("{}",sender.clone());
-    let newsletter: String = std::fs::read_to_string(format!("{}{}",newsletter_dir,newsletter))
+    let newsletter: String = std::fs::read_to_string(format!("{}/{}",newsletter_dir,newsletter))
         .expect("unable to find newsletter");
-    let relay: String = std::env::var("RELAY")
-        .expect("RELAY must be set");
-    debug!("{}",relay.clone());
-
-    let creds = Credentials::new(smtp_username, smtp_password);
-    let mailer = SmtpTransport::relay(&relay) 
-        .unwrap() 
-        .credentials(creds) 
-        .build(); 
 
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
@@ -80,16 +66,38 @@ async fn new_job(newsletter: String, database: String) {
         .await
         .expect("Cannot connect to database!");
 
-    let emails: Vec<_MailingList> = sqlx::query_as!(_MailingList,"SELECT * FROM mailing_list")
+    let clients: Vec<_MailingList> = sqlx::query_as!(_MailingList,"SELECT * FROM mailing_list")
         .fetch_all(&pool)
         .await
         .expect("Cannot get mailing list");
 
-    for client in emails {
+    execute_job(sender, newsletter, clients).await.unwrap();
+}
+
+// Execute mailing job
+async fn execute_job(sender: String, newsletter: String, clients: Vec<_MailingList>) -> Result<(), ()> {
+    let smtp_username: String = std::env::var("SMTP_USERNAME")
+        .expect("SMTP_USERNAME needs to be set");
+    debug!("{}",smtp_username.clone());
+    let smtp_password: String = std::env::var("SMTP_PASSWORD")
+        .expect("SMTP_PASSWORD needs to be set");
+    debug!("{}",smtp_password.clone());
+    let relay: String = std::env::var("RELAY")
+        .expect("RELAY must be set");
+    debug!("{}",relay.clone());
+    
+    let creds = Credentials::new(smtp_username, smtp_password);
+    let mailer = SmtpTransport::relay(&relay) 
+        .unwrap() 
+        .credentials(creds) 
+        .build(); 
+
+    for client in clients {
         let email = Message::builder() 
             .from(sender.clone().parse().unwrap()) 
             .to(client.email.parse().unwrap()) 
             .subject("Newsletter") 
+            .header(ContentType::TEXT_PLAIN)
             .body(newsletter.clone()) 
             .unwrap(); 
         match mailer.send(&email) { 
@@ -97,9 +105,9 @@ async fn new_job(newsletter: String, database: String) {
               Err(e) => panic!("Could not send email: {:?}", e), 
             }
     }
-}
 
-// Execute mailing job
+    Ok(())
+}
 // Start daemon
 // Stop daemon
 
@@ -119,6 +127,10 @@ struct Args {
     #[arg(short, value_name = "NEWSLETTER NAME")]
     job: Option<String>,
 
+    /// Time for job to be started defaults to 0, -t [delay for job]
+    #[arg(short, value_name = "TIME", action = clap::ArgAction::Count)]
+    delay: Option<u8>,
+
     /// Executes all mailing jobs, -e
     #[arg(short)]
     execute: Option<bool>,
@@ -130,13 +142,7 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()>{
-    /*
-     * -d : run as daemon 
-     * -n : add email 
-     * -r : remove email 
-     * -j : start mailing job
-     * -e : execute all mailing jobs
-     */
+
     let cli = Args::parse();
     std::env::set_var("RUST_LOG", "debug");
     dotenv().ok();
@@ -154,6 +160,17 @@ async fn main() -> anyhow::Result<()>{
         _ => println!("Don't be crazy"),
     }
 
+    let time: u8;
+
+    match cli.delay {
+        Some(delay) => {
+            time = delay;
+        },
+        None => {
+            time = 0;
+        }
+    }
+
     if let Some(email) = cli.add_email.as_deref() {
         debug!("{}", email);
         add_email(email.to_string(), database.clone()).await.unwrap();
@@ -165,11 +182,11 @@ async fn main() -> anyhow::Result<()>{
     }
 
     if let Some(_) = cli.execute {
-        println!("Executing jobs");
     }
 
     if let Some(job) = cli.job.as_deref() {
-        println!("{}", job);
+        debug!("Executing job in {}s", &time);
+        new_job(job.to_string(), database, time).await;
     }
 
 
