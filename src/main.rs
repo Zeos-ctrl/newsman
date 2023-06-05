@@ -1,5 +1,10 @@
 pub mod tests;
 
+extern crate daemonize;
+
+use daemonize::Daemonize;
+use timer::Timer;
+use std::fs::File;
 use dotenv::dotenv;
 use env_logger::Builder;
 use sqlx::mysql::MySqlPoolOptions;
@@ -45,12 +50,13 @@ async fn remove_email(email: String, database: String) -> Result<String, String>
         }
 }
 // Start mailing job
+#[derive(Clone)]
 struct _MailingList {
     email: String,
 }
 
 // Fetch data and delay for daemon
-async fn new_job(newsletter: String, database: String, delay: u8) {
+async fn new_job(newsletter: String, database: String, delay: chrono::Duration) {
     let newsletter_dir: String = std::env::var("NEWSLETTER_DIR")
         .expect("Set the newsletter directory");
     debug!("{}",newsletter_dir.clone());
@@ -71,11 +77,14 @@ async fn new_job(newsletter: String, database: String, delay: u8) {
         .await
         .expect("Cannot get mailing list");
 
-    execute_job(sender, newsletter, clients).await.unwrap();
+    Timer::new()
+        .schedule_with_delay(delay, move ||{
+            execute_job(sender.clone(), newsletter.clone(), clients.clone()).unwrap();
+        });
 }
 
 // Execute mailing job
-async fn execute_job(sender: String, newsletter: String, clients: Vec<_MailingList>) -> Result<(), ()> {
+fn execute_job(sender: String, newsletter: String, clients: Vec<_MailingList>) -> Result<(), ()> {
     let smtp_username: String = std::env::var("SMTP_USERNAME")
         .expect("SMTP_USERNAME needs to be set");
     debug!("{}",smtp_username.clone());
@@ -91,7 +100,6 @@ async fn execute_job(sender: String, newsletter: String, clients: Vec<_MailingLi
         .unwrap() 
         .credentials(creds) 
         .build(); 
-
     for client in clients {
         let email = Message::builder() 
             .from(sender.clone().parse().unwrap()) 
@@ -108,7 +116,6 @@ async fn execute_job(sender: String, newsletter: String, clients: Vec<_MailingLi
 
     Ok(())
 }
-// Start daemon
 // Stop daemon
 
 
@@ -128,46 +135,37 @@ struct Args {
     job: Option<String>,
 
     /// Time for job to be started defaults to 0, -t [delay for job]
-    #[arg(short, value_name = "TIME", action = clap::ArgAction::Count)]
-    delay: Option<u8>,
+    #[arg(short, value_name = "TIME")]
+    time: Option<i64>,
 
     /// Executes all mailing jobs, -e
     #[arg(short)]
     execute: Option<bool>,
 
+    /// Run the program as a daemon, -d
+    #[arg(short)]
+    daemon: Option<bool>,
+
     /// Turn debugging information on
-    #[arg(short, long, action = clap::ArgAction::Count)]
+    #[arg(long, action = clap::ArgAction::Count)]
     debug: u8,
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()>{
-
-    let cli = Args::parse();
+async fn parse_cli(cli: Args) -> anyhow::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
     dotenv().ok();
 
     let database: String = std::env::var("DATABASE_URL").expect("Database url must be set");
-    let mut builder = Builder::from_default_env();
 
-    match cli.debug {
-        0 => println!("Debug mode is off"),
-        1 => {
-           builder
-               .filter(None, LevelFilter::Debug)
-               .init()
-        },
-        _ => println!("Don't be crazy"),
-    }
+    let delay: chrono::Duration;
 
-    let time: u8;
-
-    match cli.delay {
-        Some(delay) => {
-            time = delay;
+    match cli.time {
+        Some(time) => {
+            debug!("{}", &time);
+            delay = chrono::Duration::seconds(time);
         },
         None => {
-            time = 0;
+            delay = chrono::Duration::seconds(0);
         }
     }
 
@@ -185,10 +183,51 @@ async fn main() -> anyhow::Result<()>{
     }
 
     if let Some(job) = cli.job.as_deref() {
-        debug!("Executing job in {}s", &time);
-        new_job(job.to_string(), database, time).await;
+        debug!("Executing job in {:?}s", &delay);
+        new_job(job.to_string(), database, delay).await;
     }
 
 
+    Ok(())
+
+}
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()>{
+
+    let cli = Args::parse();
+    let mut builder = Builder::from_default_env();
+
+    match cli.debug {
+        0 => println!("Debug mode is off"),
+        1 => {
+           builder
+               .filter(None, LevelFilter::Debug)
+               .init()
+        },
+        _ => println!("Don't be crazy"),
+    }
+
+    if let Some(true) = cli.daemon {
+        let stdout = File::create("./tmp/daemon.out").expect("Maybe file exists");
+        let stderr = File::create("./tmp/daemon.err").expect("Maybe file exists");
+
+        let daemonize = Daemonize::new()
+            .pid_file("../tmp/test.pid")
+            .working_directory("./tmp")
+            .stdout(stdout)
+            .stderr(stderr)
+            .privileged_action(|| "Executed before drop privileges");
+
+        match daemonize.start() {
+            Ok(_) => {
+                debug!("Success, daemonized");
+                parse_cli(cli).await.unwrap()
+            },
+            Err(e) => debug!("Error, {}", e),
+        }
+    }else {
+        parse_cli(cli).await.unwrap()
+    }
     Ok(())
 }
