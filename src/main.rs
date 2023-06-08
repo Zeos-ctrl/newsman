@@ -4,7 +4,8 @@ extern crate daemonize;
 
 use daemonize::Daemonize;
 use timer::Timer;
-use std::fs::File;
+use std::fs::{File, create_dir};
+use std::path::Path;
 use dotenv::dotenv;
 use env_logger::Builder;
 use sqlx::mysql::MySqlPoolOptions;
@@ -209,12 +210,16 @@ async fn main() -> anyhow::Result<()>{
     }
 
     if let Some(true) = cli.daemon {
-        let stdout = File::create("./tmp/daemon.out").expect("Maybe file exists");
-        let stderr = File::create("./tmp/daemon.err").expect("Maybe file exists");
+        if ! Path::new("/tmp/newsman").is_dir() { // check if tmp dir doesn't exist 
+            create_dir("/tmp/newsman").expect("Cannot write to tmp");
+        }
+
+        let stdout = File::create("/tmp/newsman/daemon.out").expect("Maybe file exists");
+        let stderr = File::create("/tmp/newsman/daemon.err").expect("Maybe file exists");
 
         let daemonize = Daemonize::new()
-            .pid_file("../tmp/test.pid")
-            .working_directory("./tmp")
+            .pid_file("/tmp/newsman/test.pid")
+            .working_directory("/tmp/newsman")
             .stdout(stdout)
             .stderr(stderr)
             .privileged_action(|| "Executed before drop privileges");
