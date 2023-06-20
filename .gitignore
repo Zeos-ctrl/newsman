@@ -1,2 +1,9 @@
 /target
+/.diagrams
 .env
+/tmp/*
+/newsletter
+*.tar.gz
+*.pkg.tar.zst
+src/target
+pkg
