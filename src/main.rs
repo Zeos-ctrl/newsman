@@ -15,7 +15,6 @@ use lettre::transport::smtp::authentication::Credentials;
 use lettre::{SmtpTransport, Transport};
 use lettre::message::{header::ContentType, Message};
 
-// Add email to database
 async fn add_email(email: String, database: String) -> Result<String, String>{
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
@@ -33,7 +32,6 @@ async fn add_email(email: String, database: String) -> Result<String, String>{
         }
 }
 
-// Remove email from database
 async fn remove_email(email: String, database: String) -> Result<String, String>{
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
@@ -50,13 +48,12 @@ async fn remove_email(email: String, database: String) -> Result<String, String>
             Err(err) => Err(format!("Error removing email from database: {}", err)),
         }
 }
-// Start mailing job
+
 #[derive(Clone)]
 struct _MailingList {
     email: String,
 }
 
-// Fetch data and delay for daemon
 async fn new_job(newsletter: String, database: String, delay: chrono::Duration) {
     let newsletter_dir: String = std::env::var("NEWSLETTER_DIR")
         .expect("Set the newsletter directory");
@@ -84,7 +81,6 @@ async fn new_job(newsletter: String, database: String, delay: chrono::Duration) 
         });
 }
 
-// Execute mailing job
 fn execute_job(sender: String, newsletter: String, clients: Vec<_MailingList>) -> Result<(), ()> {
     let smtp_username: String = std::env::var("SMTP_USERNAME")
         .expect("SMTP_USERNAME needs to be set");
@@ -117,7 +113,6 @@ fn execute_job(sender: String, newsletter: String, clients: Vec<_MailingList>) -
 
     Ok(())
 }
-// Stop daemon
 
 
 #[derive(Parser)]
