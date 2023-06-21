@@ -1,0 +1,16 @@
+post_install() {
+    # pacman -S mariadb
+
+    # systemctl enable mariadb
+    # systemctl start mariadb
+
+    # mariadb  < mailing_list.sql
+
+    touch ~/.config/newsman/newsman.toml
+
+    echo "url = 'database_url'\ndir = '~/.config/newsman/newsletters/'\n
+    smtp_username = 'smtp_username'\nsmtp_password = 'smtp_password'\nsender = 'sender'\n
+    relay = 'relay'" >> ~/.config/newsman/newsman.toml
+
+    mkdir ~/.config/newsman/newsletters/
+}
