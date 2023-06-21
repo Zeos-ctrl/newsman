@@ -45,28 +45,20 @@ mod tests {
     use lettre::{SmtpTransport, Transport};
     use lettre::message::{header::ContentType, Message};
 
-    use dotenv::dotenv;
+    use crate::config::Config;
 
     #[tokio::test]
     async fn new_job() {
-        dotenv().ok();
-        let smtp_username: String = std::env::var("SMTP_USERNAME")
-            .expect("SMTP_USERNAME needs to be set");
-        let smtp_password: String = std::env::var("SMTP_PASSWORD")
-            .expect("SMTP_PASSWORD needs to be set");
-        let sender: String = std::env::var("SENDER")
-            .expect("SENDER needs to be set");
-        let relay: String = std::env::var("RELAY")
-            .expect("RELAY must be set");
+        let config: Config = Config::load_config();
 
-        let creds = Credentials::new(smtp_username, smtp_password);
-        let mailer = SmtpTransport::relay(&relay) 
+        let creds = Credentials::new(config.smtp_username, config.smtp_password);
+        let mailer = SmtpTransport::relay(&config.relay) 
             .expect("Relay Error") 
             .credentials(creds) 
             .build(); 
 
         let email = Message::builder() 
-            .from(sender.clone().parse().unwrap()) 
+            .from(config.sender.clone().parse().unwrap()) 
             .to("test@test.com".parse().unwrap()) 
             .subject("Newsletter") 
             .header(ContentType::TEXT_PLAIN)

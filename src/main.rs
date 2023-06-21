@@ -1,4 +1,5 @@
 pub mod tests;
+pub mod config;
 
 extern crate daemonize;
 
@@ -6,7 +7,6 @@ use daemonize::Daemonize;
 use timer::Timer;
 use std::fs::{File, create_dir};
 use std::path::Path;
-use dotenv::dotenv;
 use env_logger::Builder;
 use sqlx::mysql::MySqlPoolOptions;
 use clap::Parser;
@@ -14,6 +14,8 @@ use log::{debug, LevelFilter};
 use lettre::transport::smtp::authentication::Credentials; 
 use lettre::{SmtpTransport, Transport};
 use lettre::message::{header::ContentType, Message};
+
+use crate::config::Config;
 
 async fn add_email(email: String, database: String) -> Result<String, String>{
     let pool = MySqlPoolOptions::new()
@@ -55,13 +57,8 @@ struct _MailingList {
 }
 
 async fn new_job(newsletter: String, database: String, delay: chrono::Duration) {
-    let newsletter_dir: String = std::env::var("NEWSLETTER_DIR")
-        .expect("Set the newsletter directory");
-    debug!("{}",newsletter_dir.clone());
-    let sender: String = std::env::var("SENDER")
-        .expect("SENDER needs to be set");
-    debug!("{}",sender.clone());
-    let newsletter: String = std::fs::read_to_string(format!("{}/{}",newsletter_dir,newsletter))
+    let config: Config = Config::load_config();
+    let newsletter: String = std::fs::read_to_string(format!("{}/{}", config.dir, newsletter))
         .expect("unable to find newsletter");
 
     let pool = MySqlPoolOptions::new()
@@ -77,23 +74,15 @@ async fn new_job(newsletter: String, database: String, delay: chrono::Duration) 
 
     Timer::new()
         .schedule_with_delay(delay, move ||{
-            execute_job(sender.clone(), newsletter.clone(), clients.clone()).unwrap();
+            execute_job(config.sender.clone(), newsletter.clone(), clients.clone()).unwrap();
         });
 }
 
 fn execute_job(sender: String, newsletter: String, clients: Vec<_MailingList>) -> Result<(), ()> {
-    let smtp_username: String = std::env::var("SMTP_USERNAME")
-        .expect("SMTP_USERNAME needs to be set");
-    debug!("{}",smtp_username.clone());
-    let smtp_password: String = std::env::var("SMTP_PASSWORD")
-        .expect("SMTP_PASSWORD needs to be set");
-    debug!("{}",smtp_password.clone());
-    let relay: String = std::env::var("RELAY")
-        .expect("RELAY must be set");
-    debug!("{}",relay.clone());
+    let config: Config = Config::load_config();
     
-    let creds = Credentials::new(smtp_username, smtp_password);
-    let mailer = SmtpTransport::relay(&relay) 
+    let creds = Credentials::new(config.smtp_username, config.smtp_password);
+    let mailer = SmtpTransport::relay(&config.relay) 
         .unwrap() 
         .credentials(creds) 
         .build(); 
@@ -149,9 +138,7 @@ struct Args {
 
 async fn parse_cli(cli: Args) -> anyhow::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
-    dotenv().ok();
-
-    let database: String = std::env::var("DATABASE_URL").expect("Database url must be set");
+    let database: String = Config::load_config().url;
 
     let delay: chrono::Duration;
 
@@ -190,7 +177,6 @@ async fn parse_cli(cli: Args) -> anyhow::Result<()> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()>{
-
     let cli = Args::parse();
     let mut builder = Builder::from_default_env();
 

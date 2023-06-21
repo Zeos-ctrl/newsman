@@ -4,9 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[env]
-DATABASE_URL='mysql://root:password@localhost/emails'
-
 [dependencies]
 dotenv = "0.15.0"
 env_logger = "0.10.0"
@@ -19,3 +16,6 @@ clap = { version = "4.3.1", features = ["derive"] }
 daemonize = "0.5.0"
 timer = "0.2"
 chrono = "0.4.26"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.7.4"
+dirs = "5.0.1"
