@@ -1,7 +1,7 @@
-use serde::Deserialize;
-use std::path::PathBuf;
+use serde::{Serialize, Deserialize};
+use std::{path::PathBuf, fs::File, io::Write};
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Config {
     pub url: String,
     pub dir: String,
@@ -21,6 +21,15 @@ impl Config {
             sender: format!("sender"),
             relay: format!("relay"),
         }    
+    }
+
+    pub fn new_config(){
+        let config: Config = Config::default();
+        let toml = toml::to_string(&config).expect("Failed turning config into toml");
+        let home: PathBuf = dirs::home_dir().expect("Cannot find home dir");
+        let mut file = File::create(format!("{}/.config/newsman/newsman.toml", home.display()))
+            .expect("Failed creating config file");
+        file.write_all(toml.as_bytes()).expect("Failed writing Default Config to file");
     }
 
     pub fn load_config() -> Config {
