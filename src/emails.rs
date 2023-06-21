@@ -1,6 +1,46 @@
+use sqlx::mysql::MySqlPoolOptions;
+
+#[derive(Clone)]
+pub struct MailingList {
+    pub email: String,
+}
+
+pub async fn add_email(email: String, database: String) -> Result<String, String>{
+    let pool = MySqlPoolOptions::new()
+        .max_connections(5)
+        .connect(&database)
+        .await
+        .expect("Cannot connect to database!");
+
+    match sqlx::query!(r#"
+                       INSERT INTO mailing_list (email) VALUES (?)"#
+                       , email)
+        .execute(&pool)
+        .await {
+            Ok(_) => Ok(format!("Successfully added email!")),
+            Err(err) => Err(format!("Error adding email to database: {}", err)),
+        }
+}
+
+pub async fn remove_email(email: String, database: String) -> Result<String, String>{
+    let pool = MySqlPoolOptions::new()
+        .max_connections(5)
+        .connect(&database)
+        .await
+        .expect("Cannot connect to database!");
+
+    match sqlx::query!(r#"
+                       DELETE FROM mailing_list WHERE email = (?)"#
+                       , email)
+        .execute(&pool)
+        .await {
+            Ok(_) => Ok(format!("Successfully removed email!")),
+            Err(err) => Err(format!("Error removing email from database: {}", err)),
+        }
+}
+
 #[cfg(test)]
 mod tests {
-
     use sqlx::mysql::MySqlPoolOptions;
     use sqlx::MySqlPool;
 
@@ -41,33 +81,4 @@ mod tests {
             }
     }
 
-    use lettre::transport::smtp::authentication::Credentials; 
-    use lettre::{SmtpTransport, Transport};
-    use lettre::message::{header::ContentType, Message};
-
-    use crate::config::Config;
-
-    #[tokio::test]
-    async fn new_job() {
-        let config: Config = Config::load_config();
-
-        let creds = Credentials::new(config.smtp_username, config.smtp_password);
-        let mailer = SmtpTransport::relay(&config.relay) 
-            .expect("Relay Error") 
-            .credentials(creds) 
-            .build(); 
-
-        let email = Message::builder() 
-            .from(config.sender.clone().parse().unwrap()) 
-            .to("test@test.com".parse().unwrap()) 
-            .subject("Newsletter") 
-            .header(ContentType::TEXT_PLAIN)
-            .body(String::from("Newsletter test"))
-            .unwrap(); 
-
-        match mailer.send(&email) { 
-              Ok(_) => assert!(true), 
-              Err(e) => panic!("Could not send email: {:?}", e), 
-            }
-    }
 }

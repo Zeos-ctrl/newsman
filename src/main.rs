@@ -1,107 +1,17 @@
-pub mod tests;
 pub mod config;
+pub mod emails;
+pub mod job;
 
 extern crate daemonize;
 
 use daemonize::Daemonize;
-use timer::Timer;
 use std::fs::{File, create_dir};
 use std::path::Path;
 use env_logger::Builder;
-use sqlx::mysql::MySqlPoolOptions;
 use clap::Parser;
 use log::{debug, LevelFilter};
-use lettre::transport::smtp::authentication::Credentials; 
-use lettre::{SmtpTransport, Transport};
-use lettre::message::{header::ContentType, Message};
 
 use crate::config::Config;
-
-async fn add_email(email: String, database: String) -> Result<String, String>{
-    let pool = MySqlPoolOptions::new()
-        .max_connections(5)
-        .connect(&database)
-        .await
-        .expect("Cannot connect to database!");
-
-    match sqlx::query!(r#"
-                       INSERT INTO mailing_list (email) VALUES (?)"#
-                       , email)
-        .execute(&pool)
-        .await {
-            Ok(_) => Ok(format!("Successfully added email!")),
-            Err(err) => Err(format!("Error adding email to database: {}", err)),
-        }
-}
-
-async fn remove_email(email: String, database: String) -> Result<String, String>{
-    let pool = MySqlPoolOptions::new()
-        .max_connections(5)
-        .connect(&database)
-        .await
-        .expect("Cannot connect to database!");
-
-    match sqlx::query!(r#"
-                       DELETE FROM mailing_list WHERE email = (?)"#
-                       , email)
-        .execute(&pool)
-        .await {
-            Ok(_) => Ok(format!("Successfully removed email!")),
-            Err(err) => Err(format!("Error removing email from database: {}", err)),
-        }
-}
-
-#[derive(Clone)]
-struct _MailingList {
-    email: String,
-}
-
-async fn new_job(newsletter: String, database: String, delay: chrono::Duration) {
-    let config: Config = Config::load_config();
-    let newsletter: String = std::fs::read_to_string(format!("{}/{}", config.dir, newsletter))
-        .expect("unable to find newsletter");
-
-    let pool = MySqlPoolOptions::new()
-        .max_connections(5)
-        .connect(&database)
-        .await
-        .expect("Cannot connect to database!");
-
-    let clients: Vec<_MailingList> = sqlx::query_as!(_MailingList,"SELECT * FROM mailing_list")
-        .fetch_all(&pool)
-        .await
-        .expect("Cannot get mailing list");
-
-    Timer::new()
-        .schedule_with_delay(delay, move ||{
-            execute_job(config.sender.clone(), newsletter.clone(), clients.clone()).unwrap();
-        });
-}
-
-fn execute_job(sender: String, newsletter: String, clients: Vec<_MailingList>) -> Result<(), ()> {
-    let config: Config = Config::load_config();
-    
-    let creds = Credentials::new(config.smtp_username, config.smtp_password);
-    let mailer = SmtpTransport::relay(&config.relay) 
-        .unwrap() 
-        .credentials(creds) 
-        .build(); 
-    for client in clients {
-        let email = Message::builder() 
-            .from(sender.clone().parse().unwrap()) 
-            .to(client.email.parse().unwrap()) 
-            .subject("Newsletter") 
-            .header(ContentType::TEXT_PLAIN)
-            .body(newsletter.clone()) 
-            .unwrap(); 
-        match mailer.send(&email) { 
-              Ok(_) => debug!("Email sent successfully!"), 
-              Err(e) => panic!("Could not send email: {:?}", e), 
-            }
-    }
-
-    Ok(())
-}
 
 
 #[derive(Parser)]
@@ -154,12 +64,12 @@ async fn parse_cli(cli: Args) -> anyhow::Result<()> {
 
     if let Some(email) = cli.add_email.as_deref() {
         debug!("{}", email);
-        add_email(email.to_string(), database.clone()).await.unwrap();
+        emails::add_email(email.to_string(), database.clone()).await.unwrap();
     }
 
     if let Some(email) = cli.remove_email.as_deref() {
         debug!("{}", email);
-        remove_email(email.to_string(), database.clone()).await.unwrap();
+        emails::remove_email(email.to_string(), database.clone()).await.unwrap();
     }
 
     if let Some(_) = cli.execute {
@@ -167,7 +77,7 @@ async fn parse_cli(cli: Args) -> anyhow::Result<()> {
 
     if let Some(job) = cli.job.as_deref() {
         debug!("Executing job in {:?}s", &delay);
-        new_job(job.to_string(), database, delay).await;
+        job::new_job(job.to_string(), database, delay).await;
     }
 
 
