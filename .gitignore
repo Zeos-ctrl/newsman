@@ -1,9 +1,11 @@
 /target
-/.diagrams
-.env
-/tmp/*
-/newsletter
 *.tar.gz
 *.pkg.tar.zst
 src/target
 pkg
+/UserGuide/UserGuide.tex
+/UserGuide/UserGuide.toc
+/UserGuide/UserGuide.aux
+/UserGuide/UserGuide.fls
+/UserGuide/UserGuide.log
+/UserGuide/UserGuide.fdb_latexmk
