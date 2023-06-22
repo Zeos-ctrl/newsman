@@ -1,0 +1,10 @@
+[Unit]
+Description=Newsman a mailing list manager written in rust.
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/newsman -d
+
+[Install]
+WantedBy=multi-user.target

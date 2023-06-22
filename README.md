@@ -13,7 +13,7 @@ These are the current function that need to be written
 | Start daemon | :heavy_check_mark: |
 | Stop daemon | :heavy_check_mark: |
 | Main function | :heavy_check_mark: |
-| systemd service | :x: |
+| systemd service | :heavy_check_mark: |
 | Store jobs in database | :x: |
 | Automatically listen on port for email | :x: |
 | Man Page | :x: |
