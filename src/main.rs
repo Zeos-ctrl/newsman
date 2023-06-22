@@ -4,6 +4,7 @@ pub mod job;
 
 extern crate daemonize;
 
+use chrono::Utc;
 use daemonize::Daemonize;
 use std::fs::{File, create_dir};
 use std::path::Path;
@@ -29,11 +30,11 @@ struct Args {
     #[arg(short, value_name = "NEWSLETTER NAME")]
     job: Option<String>,
 
-    /// Time for job to be started defaults to 0, -t [delay for job]
+    /// Time for job to be started defaults to 0 Minutes, -t [delay for job]
     #[arg(short, value_name = "TIME")]
     time: Option<i64>,
 
-    /// Executes all mailing jobs, -e
+    /// Starts a tokio server that automatically does jobs when the time comes, -s
     #[arg(short)]
     execute: Option<bool>,
 
@@ -50,15 +51,15 @@ async fn parse_cli(cli: Args) -> anyhow::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
     let database: String = Config::load_config().url;
 
-    let delay: chrono::Duration;
+    let delay: i64;
 
     match cli.time {
         Some(time) => {
             debug!("{}", &time);
-            delay = chrono::Duration::seconds(time);
+            delay = Utc::now().timestamp() + (time * 60);
         },
         None => {
-            delay = chrono::Duration::seconds(0);
+            delay = Utc::now().timestamp();
         }
     }
 
@@ -72,12 +73,14 @@ async fn parse_cli(cli: Args) -> anyhow::Result<()> {
         emails::remove_email(email.to_string(), database.clone()).await.unwrap();
     }
 
-    if let Some(_) = cli.execute {
+    if let Some(true) = cli.execute {
+        debug!("executing job server");
+        job::execute_daemon().await;
     }
 
     if let Some(job) = cli.job.as_deref() {
         debug!("Executing job in {:?}s", &delay);
-        job::new_job(job.to_string(), database, delay).await;
+        job::add_job(job.to_string(), delay).await.unwrap();
     }
 
 

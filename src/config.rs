@@ -8,7 +8,8 @@ pub struct Config {
     pub smtp_username: String,
     pub smtp_password: String,
     pub sender: String,
-    pub relay: String
+    pub relay: String,
+    pub interval: u64
 }
 
 impl Config {
@@ -20,6 +21,7 @@ impl Config {
             smtp_password: format!("default"),
             sender: format!("sender"),
             relay: format!("relay"),
+            interval: 0
         }    
     }
 

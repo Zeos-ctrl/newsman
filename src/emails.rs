@@ -13,8 +13,8 @@ pub async fn add_email(email: String, database: String) -> Result<String, String
         .expect("Cannot connect to database!");
 
     match sqlx::query!(r#"
-                       INSERT INTO mailing_list (email) VALUES (?)"#
-                       , email)
+                       INSERT INTO mailing_list (email) VALUES (?)"#, 
+                       email)
         .execute(&pool)
         .await {
             Ok(_) => Ok(format!("Successfully added email!")),
@@ -30,8 +30,8 @@ pub async fn remove_email(email: String, database: String) -> Result<String, Str
         .expect("Cannot connect to database!");
 
     match sqlx::query!(r#"
-                       DELETE FROM mailing_list WHERE email = (?)"#
-                       , email)
+                       DELETE FROM mailing_list WHERE email = (?)"#,
+                       email)
         .execute(&pool)
         .await {
             Ok(_) => Ok(format!("Successfully removed email!")),
@@ -48,7 +48,7 @@ mod tests {
     async fn create_connection(){
         let pool = MySqlPoolOptions::new()
             .max_connections(5)
-            .connect("mysql://root:password@127.0.0.1:3306/emails")
+            .connect("mysql://root:password@127.0.0.1:3306/newsman")
             .await;
         match pool {
             Ok(_) => assert!(true),

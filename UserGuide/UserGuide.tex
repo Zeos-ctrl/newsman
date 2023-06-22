@@ -24,16 +24,16 @@ or detached as a daemon and run as a background process!
 \section{Installation}
 Newsman can be installed from source for anyone familiar with that process,
 a database must also be constructed in order to complete the installation.
-The database schema can be found in the git repo under mailing\_list.sql and 
+The database schema can be found in the git repo under newsman.sql and 
 \textbf{MUST BE INSTALLED INTO A DATABASE BASED ON MYSQL} because at the moment 
-thats the only supported database type, i.e, mariadb. After installing 
+that's the only supported database type, i.e, mariadb. After installing 
 the package a config file should have been created called 
 .config/newsman/newsman.toml this file contains all the information
 needed by the program to work, this includes:
 
 \begin{itemize}
     \item url: This is the database url, for example 
-        mysql://root:password@localhost/emails 
+        mysql://root:password@localhost/newsman 
     \item dir: This is the directory the newsletters are stored in,
         it defaults to .config/newsman/newsletters/
     \item smtp\_username: This is the username for the smtp client such as, 
@@ -41,6 +41,8 @@ needed by the program to work, this includes:
     \item smtp\_password: This is the password for the email.
     \item sender: Should be the same as smtp\_username.
     \item relay: Your smtp relay for example, mail.example.com.
+    \item interval: The interval in minutes that the server will check if jobs 
+        need sending.
 \end{itemize}
 
 \section{Usage}
@@ -52,8 +54,8 @@ command:
     \item -r (Email) Removes an email from the mailing list.
     \item -j (Newsletter Name) Starts a mailing job for a specified newsletter. 
     \item -t (Time) Time to delay the newsletter from being sent, defaults to 
-        0s.
-    \item -e (Execute) Executes all mailing jobs, given true or false.
+        0 minutes.
+    \item -e (Execute) Starts the mailing server, given true or false.
     \item -d (Daemon) Runs the program as a daemon, given true or false. 
     \item -\-debug Turns debugging information on.
     \item -h, -\-help (Help) Prints help.

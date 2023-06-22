@@ -3,7 +3,7 @@ post_install() {
 
     echo -e "url = 'database_url'\ndir = '~/.config/newsman/newsletters/'\n
     smtp_username = 'smtp_username'\nsmtp_password = 'smtp_password'\nsender = 'sender'\n
-    relay = 'relay'" >> ~/.config/newsman/newsman.toml
+    relay = 'relay'\n interval = 0" >> ~/.config/newsman/newsman.toml
 
     mkdir ~/.config/newsman/newsletters/
     cp newman.service /usr/lib/systemd/system/

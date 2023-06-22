@@ -1,36 +1,57 @@
-use timer::Timer;
 use sqlx::mysql::MySqlPoolOptions;
 use log::debug;
+use chrono::Utc;
 use lettre::transport::smtp::authentication::Credentials; 
 use lettre::{SmtpTransport, Transport};
 use lettre::message::{header::ContentType, Message};
+use tokio::time::{interval, Duration};
 
 use crate::Config;
 use crate::emails::MailingList;
 
-pub async fn new_job(newsletter: String, database: String, delay: chrono::Duration) {
+#[derive(Clone)]
+struct Job {
+    newsletter: String,
+    time: i64,
+}
+
+pub async fn add_job(newsletter: String, delay: i64) -> Result<String, String>{
     let config: Config = Config::load_config();
-    let newsletter: String = std::fs::read_to_string(format!("{}/{}", config.dir, newsletter))
-        .expect("unable to find newsletter");
 
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
-        .connect(&database)
+        .connect(&config.url)
         .await
         .expect("Cannot connect to database!");
 
-    let clients: Vec<MailingList> = sqlx::query_as!(MailingList,"SELECT * FROM mailing_list")
-        .fetch_all(&pool)
-        .await
-        .expect("Cannot get mailing list");
-
-    Timer::new()
-        .schedule_with_delay(delay, move ||{
-            execute_job(config.sender.clone(), newsletter.clone(), clients.clone()).unwrap();
-        });
+    match sqlx::query!(r#"INSERT INTO jobs (newsletter, time) VALUES (?, ?)"#,
+        newsletter,
+        delay)
+        .execute(&pool)
+        .await {
+            Ok(_) => Ok(format!("successfully added job")),
+            Err(err) => Err(format!("error adding job: {}", err))
+        }
 }
 
-pub fn execute_job(sender: String, newsletter: String, clients: Vec<MailingList>) -> Result<(), ()> {
+pub async fn remove_job(newsletter: String) -> Result<String, String>{
+    let config: Config = Config::load_config();
+
+    let pool = MySqlPoolOptions::new()
+        .max_connections(5)
+        .connect(&config.url)
+        .await
+        .expect("Cannot connect to database!");
+
+    match sqlx::query!(r#"DELETE FROM jobs WHERE newsletter = (?)"#,newsletter)
+        .execute(&pool)
+        .await {
+            Ok(_) => Ok(format!("successfully removed job")),
+            Err(err) => Err(format!("error removing job: {}", err))
+        }
+}
+
+pub fn execute_job(newsletter: String, clients: &Vec<MailingList>) -> Result<(), ()> {
     let config: Config = Config::load_config();
     
     let creds = Credentials::new(config.smtp_username, config.smtp_password);
@@ -40,7 +61,7 @@ pub fn execute_job(sender: String, newsletter: String, clients: Vec<MailingList>
         .build(); 
     for client in clients {
         let email = Message::builder() 
-            .from(sender.clone().parse().unwrap()) 
+            .from(config.sender.clone().parse().unwrap()) 
             .to(client.email.parse().unwrap()) 
             .subject("Newsletter") 
             .header(ContentType::TEXT_PLAIN)
@@ -53,6 +74,54 @@ pub fn execute_job(sender: String, newsletter: String, clients: Vec<MailingList>
     }
 
     Ok(())
+}
+
+pub async fn execute_daemon(){
+    let config: Config = Config::load_config();
+
+    let pool = MySqlPoolOptions::new()
+        .max_connections(5)
+        .connect(&config.url)
+        .await
+        .expect("Cannot connect to database!");
+
+    tokio::spawn(async move{
+        let mut interval = interval(Duration::from_secs(config.interval * 60));
+        interval.tick().await; // first tick fires immediately, ignore it
+        loop {
+            interval.tick().await;
+
+            let jobs_list: Result<Vec<Job>, sqlx::Error> = sqlx::query_as!(Job,"SELECT * FROM jobs")
+                .fetch_all(&pool)
+                .await;
+
+            let clients: Vec<MailingList> = sqlx::query_as!(MailingList, "SELECT * from mailing_list")
+                .fetch_all(&pool)
+                .await
+                .unwrap();
+
+            match jobs_list{
+                    Ok(jobs) => {
+                        for newsletter in jobs {
+                            if compare_time(newsletter.time){
+                                execute_job(newsletter.newsletter.clone(), &clients).unwrap();
+                                remove_job(newsletter.newsletter).await.unwrap();
+                            }
+                        };
+                    },
+                    Err(err) => debug!("Error getting jobs from database: {}", err)
+                }
+            }
+    });
+}
+
+fn compare_time(time: i64) -> bool{
+    let start_time = Utc::now().timestamp();
+    if start_time - time < 0 {
+        true
+    } else {
+        false
+    } 
 }
 
 #[cfg(test)]

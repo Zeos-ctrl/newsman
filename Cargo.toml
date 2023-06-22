@@ -15,7 +15,7 @@ anyhow = "1.0"
 clap = { version = "4.3.1", features = ["derive"] }
 daemonize = "0.5.0"
 timer = "0.2"
-chrono = "0.4.26"
+chrono = { version = "0.4.26", features = ["clock", "time"] }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.7.4"
 dirs = "5.0.1"
