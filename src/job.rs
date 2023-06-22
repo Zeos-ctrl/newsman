@@ -75,7 +75,7 @@ mod tests {
 
         let email = Message::builder() 
             .from(config.sender.clone().parse().unwrap()) 
-            .to("test@test.com".parse().unwrap()) 
+            .to(config.sender.clone().parse().unwrap()) 
             .subject("Newsletter") 
             .header(ContentType::TEXT_PLAIN)
             .body(String::from("Newsletter test"))

@@ -13,11 +13,12 @@ These are the current function that need to be written
 | Start daemon | :heavy_check_mark: |
 | Stop daemon | :heavy_check_mark: |
 | Main function | :heavy_check_mark: |
+| systemd service | :x: |
+| Store jobs in database | :x: |
+| Automatically listen on port for email | :x: |
+| Man Page | :x: |
 
-## Setup
-You will also need to make the database which can be found in mailing_list.sql, 
-at the moment only mysql databases work with the program.
+## Documentation
 
-```
-$ mariadb -u root -p < mailing_list.sql
-```
+The documentation can be found [here](DOCUMENTATION.md), this includes an 
+installation guide, usage guide and how to contribute to the project!

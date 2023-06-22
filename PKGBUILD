@@ -28,7 +28,7 @@ build() {
 
 check() {
         export RUSTUP_TOOLCHAIN=stable
-        cargo test --frozen --all-features -- --skip new_job
+        cargo test --frozen --all-features
 }
 
 package() {
