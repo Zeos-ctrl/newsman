@@ -34,7 +34,7 @@ struct Args {
     #[arg(short, value_name = "TIME")]
     time: Option<i64>,
 
-    /// Starts a tokio server that automatically does jobs when the time comes, -s
+    /// Starts a tokio server that automatically does jobs when the time comes, -e
     #[arg(short)]
     execute: Option<bool>,
 
