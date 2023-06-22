@@ -3,7 +3,6 @@
 *.pkg.tar.zst
 src/target
 pkg
-/UserGuide/UserGuide.tex
 /UserGuide/UserGuide.toc
 /UserGuide/UserGuide.aux
 /UserGuide/UserGuide.fls

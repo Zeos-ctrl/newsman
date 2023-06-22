@@ -1,0 +1,81 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\graphicspath{ {./images/} }
+
+\title{Newsman User Guide}
+\author{Zeos-Ctrl}
+
+\begin{document}
+\maketitle
+\newpage
+
+\tableofcontents
+
+\section{About}
+\begin{align*}
+    \includegraphics[width=0.5\textwidth]{images/60everytime-5.png}
+\end{align*}
+Newsman is a command line program that allows you to construct a mailing list and send 
+out newsletters to the people on that list. It can work attached to the terminal 
+or detached as a daemon and run as a background process!
+
+\section{Installation}
+Newsman can be installed from source for anyone familiar with that process,
+a database must also be constructed in order to complete the installation.
+The database schema can be found in the git repo under mailing\_list.sql and 
+\textbf{MUST BE INSTALLED INTO A DATABASE BASED ON MYSQL} because at the moment 
+thats the only supported database type, i.e, mariadb. After installing 
+the package a config file should have been created called 
+.config/newsman/newsman.toml this file contains all the information
+needed by the program to work, this includes:
+
+\begin{itemize}
+    \item url: This is the database url, for example 
+        mysql://root:password@localhost/emails 
+    \item dir: This is the directory the newsletters are stored in,
+        it defaults to .config/newsman/newsletters/
+    \item smtp\_username: This is the username for the smtp client such as, 
+        example@mail.com.
+    \item smtp\_password: This is the password for the email.
+    \item sender: Should be the same as smtp\_username.
+    \item relay: Your smtp relay for example, mail.example.com.
+\end{itemize}
+
+\section{Usage}
+Newsman comes with multiple flag options which can be found with the newsman -h 
+command:
+
+\begin{itemize}
+    \item -a (Email) Adds an email to the mailing list.
+    \item -r (Email) Removes an email from the mailing list.
+    \item -j (Newsletter Name) Starts a mailing job for a specified newsletter. 
+    \item -t (Time) Time to delay the newsletter from being sent, defaults to 
+        0s.
+    \item -e (Execute) Executes all mailing jobs, given true or false.
+    \item -d (Daemon) Runs the program as a daemon, given true or false. 
+    \item -\-debug Turns debugging information on.
+    \item -h, -\-help (Help) Prints help.
+    \item -V, -\-version (Version) Prints version.
+\end{itemize}
+
+\section{Contributing}
+When contributing to this project make sure to follow these steps:
+
+\begin{itemize}
+    \item Open an issue with your planned change
+    \item Make a branch for your change
+    \item Make your change following the projects structure
+    \item Open a pull request to merge your branch
+\end{itemize}
+
+These steps ensure the software doesn't suffer from feature creep and keeps the 
+codebase as clean as possible. When writing the code make sure it follows Rust 
+best practices as well as being placed in an appropriate file. For example if 
+you write a function for handling emails make sure it's in the emails.rs file. 
+If adding a new type of function make a new file in the src directory 
+called \textbf{\textit{function.rs}}, where function is whatever your function 
+relates to. Any tests should be written at the bottom of the that functions file.
+
+\end{document}
