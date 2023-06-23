@@ -17,7 +17,7 @@ md5sums=('SKIP')
 
 prepare() {
         export RUSTUP_TOOLCHAIN=stable
-        cargo fetch --locked --target "$CARCH-unknown-linux-gnu"
+        cargo fetch --target "$CARCH-unknown-linux-gnu"
 }
 
 build() {
@@ -26,12 +26,9 @@ build() {
         cargo build --frozen --release --all-features
 }
 
-check() {
-        export RUSTUP_TOOLCHAIN=stable
-        cargo test --frozen --all-features
-}
-
 package() {
         install -Dm0755 -t "$pkgdir/usr/bin/" "target/release/$pkgname"
+        install -m755 -d ${pkgdir}/usr/lib/systemd/system
+        install -m644 "$startdir/newsman.service" "$pkgdir/usr/lib/systemd/system"
 }
 

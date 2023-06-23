@@ -7,7 +7,7 @@ extern crate daemonize;
 use chrono::Utc;
 use daemonize::Daemonize;
 use std::fs::{File, create_dir};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use env_logger::Builder;
 use clap::Parser;
 use log::{debug, LevelFilter};
@@ -49,7 +49,7 @@ struct Args {
 
 async fn parse_cli(cli: Args) -> anyhow::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
-    let database: String = Config::load_config().url;
+    let database: String = Config::load_config().unwrap().url;
 
     let delay: i64;
 
@@ -88,10 +88,61 @@ async fn parse_cli(cli: Args) -> anyhow::Result<()> {
 
 }
 
+fn first_time_setup() {
+    // setup wizard construct a config and save to file
+    let mut default_config: Config = Config::default();
+    println!("Welcome to Newsman! There are no config files to this wizard will help you construct them.");
+    println!("Would you like to use the default settings and edit them manually later? Y/n");
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).expect("failed to read input");
+
+    if input.eq("Y") || input.eq("y") {
+        println!("Using default config, this can be edited in ~/.config/newsman/");
+        default_config.save_config();
+        return;
+    }
+
+    println!("Enter the database url, e.g, mysql://root:password@localhost/newsman");
+    let mut url = String::new();
+    std::io::stdin().read_line(&mut url).expect("failed to read input");
+    default_config.set_url(url);
+
+    println!("Enter your smtp_username, e.g, example@example.com");
+    let mut smtp_username = String::new();
+    std::io::stdin().read_line(&mut smtp_username).expect("failed to read input");
+    default_config.set_smtp_username(smtp_username);
+
+    println!("Enter your smtp_password, e.g, 12345");
+    let mut smtp_password = String::new();
+    std::io::stdin().read_line(&mut smtp_password).expect("failed to read input");
+    default_config.set_smtp_password(smtp_password);
+
+    println!("Enter your smtp relay, e.g, mail.example.com");
+    let mut relay = String::new();
+    std::io::stdin().read_line(&mut relay).expect("failed to read input");
+    default_config.set_relay(relay);
+
+    println!("Enter the time interval that the server should check for jobs to do in minuites");
+    let mut interval = String::new();
+    std::io::stdin().read_line(&mut interval).expect("failed to read input");
+    let x: u64 = interval.trim().parse().expect("Input not an integer");
+    default_config.set_interval(x);
+
+    println!("These are your settings:\n{:?}", &default_config);
+    default_config.save_config();
+    return;
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()>{
     let cli = Args::parse();
     let mut builder = Builder::from_default_env();
+
+    let home: PathBuf = dirs::home_dir().expect("Cannot find home dir");
+    match std::fs::read_to_string(format!("{}/.config/newsman/newsman.toml", home.display())) {
+        Ok(_) => debug!("Configs are correct and made"),
+        Err(_) => first_time_setup(),
+    }
 
     match cli.debug {
         0 => println!("Debug mode is off"),

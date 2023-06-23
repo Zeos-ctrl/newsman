@@ -16,7 +16,7 @@ struct Job {
 }
 
 pub async fn add_job(newsletter: String, delay: i64) -> Result<String, String>{
-    let config: Config = Config::load_config();
+    let config: Config = Config::load_config().unwrap();
 
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
@@ -35,7 +35,7 @@ pub async fn add_job(newsletter: String, delay: i64) -> Result<String, String>{
 }
 
 pub async fn remove_job(newsletter: String) -> Result<String, String>{
-    let config: Config = Config::load_config();
+    let config: Config = Config::load_config().unwrap();
 
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
@@ -52,7 +52,7 @@ pub async fn remove_job(newsletter: String) -> Result<String, String>{
 }
 
 pub fn execute_job(newsletter: String, clients: &Vec<MailingList>) -> Result<(), ()> {
-    let config: Config = Config::load_config();
+    let config: Config = Config::load_config().unwrap();
     
     let creds = Credentials::new(config.smtp_username, config.smtp_password);
     let mailer = SmtpTransport::relay(&config.relay) 
@@ -77,7 +77,7 @@ pub fn execute_job(newsletter: String, clients: &Vec<MailingList>) -> Result<(),
 }
 
 pub async fn execute_daemon(){
-    let config: Config = Config::load_config();
+    let config: Config = Config::load_config().unwrap();
 
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
@@ -134,7 +134,7 @@ mod tests {
 
     #[tokio::test]
     async fn new_job() {
-        let config: Config = Config::load_config();
+        let config: Config = Config::load_config().unwrap();
 
         let creds = Credentials::new(config.smtp_username, config.smtp_password);
         let mailer = SmtpTransport::relay(&config.relay) 

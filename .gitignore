@@ -3,6 +3,7 @@ Cargo.lock
 *.tar.gz
 *.pkg.tar.zst
 src/target
+src/newsman.service
 pkg
 /UserGuide/UserGuide.toc
 /UserGuide/UserGuide.aux
