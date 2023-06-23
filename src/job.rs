@@ -129,6 +129,7 @@ mod tests {
     use lettre::transport::smtp::authentication::Credentials; 
     use lettre::{SmtpTransport, Transport};
     use lettre::message::{header::ContentType, Message};
+    use tokio::time::{interval, Duration};
 
     use crate::config::Config;
 
@@ -154,5 +155,14 @@ mod tests {
               Ok(_) => assert!(true), 
               Err(e) => panic!("Could not send email: {:?}", e), 
             }
+    }
+
+    #[tokio::test]
+    async fn spawn_server() {
+        tokio::spawn(async {
+            let mut interval = interval(Duration::from_secs(1));
+            interval.tick().await; // first tick fires immediately, ignore it
+            assert!(true)
+        });
     }
 }
