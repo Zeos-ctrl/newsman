@@ -9,8 +9,8 @@ dotenv = "0.15.0"
 env_logger = "0.10.0"
 lettre = { version = "0.10.4", features = ["builder"] }
 log = "0.4.18"
-sqlx = { version = "0.6.3", features = ["mysql", "runtime-tokio-native-tls"] }
-tokio = { version = "1.28.2", features = ["macros"] }
+sqlx = { version = "0.6.3", features = ["mysql", "runtime-tokio-native-tls", "offline"] }
+tokio = { version = "1.28.2", features = ["macros", "rt"] }
 anyhow = "1.0"
 clap = { version = "4.3.1", features = ["derive"] }
 daemonize = "0.5.0"

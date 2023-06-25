@@ -16,12 +16,12 @@ pub struct Config {
 impl Config {
     pub fn default() -> Config {
         Config {
-            url: format!("database_url"),
+            url: format!("mysql://root:password@localhost/newsman"),
             dir: format!("~/.config/newsman/newsletters/"),
-            smtp_username: format!("default"),
-            smtp_password: format!("default"),
-            sender: format!("sender"),
-            relay: format!("relay"),
+            smtp_username: format!("newsletter@example.com"),
+            smtp_password: format!("example"),
+            sender: format!("newsletter@example.com"),
+            relay: format!("mail.example.com"),
             interval: 0
         }    
     }

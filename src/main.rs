@@ -30,6 +30,10 @@ struct Args {
     #[arg(short, value_name = "NEWSLETTER NAME")]
     job: Option<String>,
 
+    /// Removes a mailing job, -u [newsletter name]
+    #[arg(short, value_name = "NEWSLETTER NAME")]
+    unassign_job: Option<String>,
+
     /// Time for job to be started defaults to 0 Minutes, -t [delay for job]
     #[arg(short, value_name = "TIME")]
     time: Option<i64>,
@@ -65,24 +69,53 @@ async fn parse_cli(cli: Args) -> anyhow::Result<()> {
 
     if let Some(email) = cli.add_email.as_deref() {
         debug!("{}", email);
-        emails::add_email(email.to_string(), database.clone()).await.unwrap();
+        let output: Result<String, String> = emails::add_email(email.to_string(), database.clone())
+            .await;
+
+        match output {
+            Ok(output) => println!("{}", output),
+            Err(err) => println!("{}", err)
+        }
     }
 
     if let Some(email) = cli.remove_email.as_deref() {
         debug!("{}", email);
-        emails::remove_email(email.to_string(), database.clone()).await.unwrap();
+        let output: Result<String, String> = emails::remove_email(email.to_string(), database.clone())
+            .await;
+
+        match output {
+            Ok(output) => println!("{}", output),
+            Err(err) => println!("{}", err)
+        }
     }
 
     if let Some(true) = cli.execute {
         debug!("executing job server");
-        job::execute_daemon().await;
+        job::execute_daemon()
+            .await;
     }
 
     if let Some(job) = cli.job.as_deref() {
         debug!("Executing job in {:?}s", &delay);
-        job::add_job(job.to_string(), delay).await.unwrap();
+        let output: Result<String, String> = job::add_job(job.to_string(), delay)
+            .await;
+
+        match output {
+            Ok(output) => println!("{}", output),
+            Err(err) => println!("{}", err)
+        }
     }
 
+    if let Some(job) = cli.job.as_deref() {
+        debug!("Unassinging job: {}", &job);
+        let output: Result<String, String> = job::remove_job(job.to_string())
+            .await;
+
+        match output {
+            Ok(output) => println!("{}", output),
+            Err(err) => println!("{}", err)
+        }
+    }
 
     Ok(())
 
@@ -93,6 +126,15 @@ fn first_time_setup() -> anyhow::Result<()>{
     let mut default_config: Config = Config::default();
 
     let home: PathBuf = dirs::home_dir().expect("cannot get home dir");
+    match std::fs::read_dir(format!("{}/.config", &home.display())) {
+        Ok(_) => debug!(".config exists continuing setup"),
+        Err(_) => {
+            debug!(".config not found creating it now");
+            std::fs::create_dir(format!("{}/.config", &home.display()))
+                .expect("failed to make .config")
+        }
+    }
+
     std::fs::create_dir(format!("{}/.config/newsman", &home.display())).expect("failed to make newsman dir");
     std::fs::create_dir(format!("{}/.config/newsman/newsletters", &home.display())).expect("failed to make newsletter dir");
 
@@ -150,6 +192,7 @@ async fn main() -> anyhow::Result<()>{
     let mut builder = Builder::from_default_env();
 
     let home: PathBuf = dirs::home_dir().expect("Cannot find home dir");
+
     match std::fs::read_to_string(format!("{}/.config/newsman/newsman.toml", home.display())) {
         Ok(_) => debug!("Configs are correct and made"),
         Err(_) => first_time_setup().unwrap(),
@@ -170,8 +213,10 @@ async fn main() -> anyhow::Result<()>{
             create_dir("/tmp/newsman").expect("Cannot write to tmp");
         }
 
-        let stdout = File::create("/tmp/newsman/daemon.out").expect("Maybe file exists");
-        let stderr = File::create("/tmp/newsman/daemon.err").expect("Maybe file exists");
+        let stdout = File::create("/tmp/newsman/daemon.out")
+            .expect("Maybe file exists");
+        let stderr = File::create("/tmp/newsman/daemon.err")
+            .expect("Maybe file exists");
 
         let daemonize = Daemonize::new()
             .pid_file("/tmp/newsman/test.pid")

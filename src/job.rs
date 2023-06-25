@@ -24,14 +24,28 @@ pub async fn add_job(newsletter: String, delay: i64) -> Result<String, String>{
         .await
         .expect("Cannot connect to database!");
 
-    match sqlx::query!(r#"INSERT INTO jobs (newsletter, time) VALUES (?, ?)"#,
-        newsletter,
-        delay)
-        .execute(&pool)
-        .await {
-            Ok(_) => Ok(format!("successfully added job")),
-            Err(err) => Err(format!("error adding job: {}", err))
+    let exists = sqlx::query!(r#"
+                              SELECT newsletter FROM jobs WHERE newsletter = (?)"#,
+                              &newsletter)
+        .fetch_one(&pool)
+        .await;
+
+    match exists {
+        Ok(_) => {
+            Ok(format!("There is already a job open for {}", newsletter))
+        },
+        Err(_) => {
+            match sqlx::query!(r#"
+                               INSERT INTO jobs (newsletter, time) VALUES (?, ?)"#,
+                               newsletter,
+                               delay)
+                .execute(&pool)
+                .await {
+                    Ok(_) => Ok(format!("successfully added job")),
+                    Err(err) => Err(format!("error adding job: {}", err))
+                }
         }
+    }
 }
 
 pub async fn remove_job(newsletter: String) -> Result<String, String>{
@@ -43,12 +57,24 @@ pub async fn remove_job(newsletter: String) -> Result<String, String>{
         .await
         .expect("Cannot connect to database!");
 
-    match sqlx::query!(r#"DELETE FROM jobs WHERE newsletter = (?)"#,newsletter)
-        .execute(&pool)
-        .await {
-            Ok(_) => Ok(format!("successfully removed job")),
-            Err(err) => Err(format!("error removing job: {}", err))
-        }
+    debug!("removing the job: {}", newsletter.clone());
+
+    let exists = sqlx::query!(r#"
+                              SELECT newsletter FROM jobs WHERE newsletter = (?)"#,
+                              &newsletter)
+        .fetch_one(&pool)
+        .await;
+    match exists {
+        Ok(_) => {
+            match sqlx::query!(r#"DELETE FROM jobs WHERE newsletter = (?)"#,newsletter)
+                .execute(&pool)
+                .await {
+                    Ok(_) => Ok(format!("successfully removed job")),
+                    Err(err) => Err(format!("error removing job: {}", err))
+                }
+        },
+        Err(_) => Err(format!("There is no current job for {}", newsletter))
+    }
 }
 
 pub fn execute_job(newsletter: String, clients: &Vec<MailingList>) -> Result<(), ()> {
@@ -77,19 +103,18 @@ pub fn execute_job(newsletter: String, clients: &Vec<MailingList>) -> Result<(),
 }
 
 pub async fn execute_daemon(){
-    let config: Config = Config::load_config().unwrap();
+    tokio::spawn(async {
+        let config: Config = Config::load_config().unwrap();
 
-    let pool = MySqlPoolOptions::new()
-        .max_connections(5)
-        .connect(&config.url)
-        .await
-        .expect("Cannot connect to database!");
-
-    tokio::spawn(async move{
-        let mut interval = interval(Duration::from_secs(config.interval * 60));
+        let pool = MySqlPoolOptions::new()
+            .max_connections(5)
+            .connect(&config.url)
+            .await
+            .expect("Cannot connect to database!");
+        debug!("spawned server");
+        let mut interval = interval(Duration::from_secs(config.interval.clone() * 60));
         interval.tick().await; // first tick fires immediately, ignore it
         loop {
-            interval.tick().await;
 
             let jobs_list: Result<Vec<Job>, sqlx::Error> = sqlx::query_as!(Job,"SELECT * FROM jobs")
                 .fetch_all(&pool)
@@ -99,11 +124,13 @@ pub async fn execute_daemon(){
                 .fetch_all(&pool)
                 .await
                 .unwrap();
+            debug!("checking jobs");
 
             match jobs_list{
                     Ok(jobs) => {
                         for newsletter in jobs {
                             if compare_time(newsletter.time){
+                                debug!("executing job: {}", newsletter.newsletter.clone());
                                 execute_job(newsletter.newsletter.clone(), &clients).unwrap();
                                 remove_job(newsletter.newsletter).await.unwrap();
                             }
@@ -111,13 +138,16 @@ pub async fn execute_daemon(){
                     },
                     Err(err) => debug!("Error getting jobs from database: {}", err)
                 }
+            debug!("waiting {} minutes to check jobs again", config.interval);
+            interval.tick().await;
             }
-    });
+    }).await.unwrap();
 }
 
 fn compare_time(time: i64) -> bool{
     let start_time = Utc::now().timestamp();
-    if start_time - time < 0 {
+    debug!("{}", &time - &start_time);
+    if time - start_time < 0 {
         true
     } else {
         false

@@ -1,0 +1,126 @@
+{
+  "db": "MySQL",
+  "0098c158faf669adc62c2ddd78fe533424c8b18e25ce0f4d1b8b80862e13a67e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "email",
+          "ordinal": 0,
+          "type_info": {
+            "char_set": 224,
+            "flags": {
+              "bits": 4097
+            },
+            "max_size": 1020,
+            "type": "VarString"
+          }
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "SELECT * from mailing_list"
+  },
+  "02eb83adad0670875577f49ce12de1ca824b4421d0091e6f3bedbef896bedd86": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM mailing_list WHERE email = (?)"
+  },
+  "3587209faf37ccf76ce0cf734eb03113241269354fea8cd5a79c3aa0a96ee646": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "\n                       INSERT INTO mailing_list (email) VALUES (?)"
+  },
+  "393689c77f8aefe3cb456cd49d81349228aa5701955794938b52886698411a85": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "INSERT INTO jobs (newsletter, time) VALUES (?, ?)"
+  },
+  "4bdd664f81b4e0bc9002c283e0545a22a5589ba8e39390dcaa8313723a875663": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "\n                       DELETE FROM mailing_list WHERE email = (?)"
+  },
+  "96ef8ea48e1a054a1dc024d0c2e1d326703628ddf4a6fa7196a45bd539267fc0": {
+    "describe": {
+      "columns": [
+        {
+          "name": "newsletter",
+          "ordinal": 0,
+          "type_info": {
+            "char_set": 224,
+            "flags": {
+              "bits": 4097
+            },
+            "max_size": 1020,
+            "type": "VarString"
+          }
+        },
+        {
+          "name": "time",
+          "ordinal": 1,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 4097
+            },
+            "max_size": 20,
+            "type": "LongLong"
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "SELECT * FROM jobs"
+  },
+  "ba4374b90fc0272a64e4dd5284f9c4d3516280888dec88d84745f95517d105d4": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "INSERT INTO mailing_list (email) VALUES (?)"
+  },
+  "bf69f87af4859a0232b9591171fcf49e15f2e9fddda03c8ff9a8b58376460b4b": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM jobs WHERE newsletter = (?)"
+  }
+}

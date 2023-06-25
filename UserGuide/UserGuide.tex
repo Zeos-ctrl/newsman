@@ -15,7 +15,7 @@
 
 \section{About}
 \begin{align*}
-    \includegraphics[width=0.5\textwidth]{images/60everytime-5.png}
+    \includegraphics[width=0.5\textwidth]{images/60everytime.png}
 \end{align*}
 Newsman is a command line program that allows you to construct a mailing list and send 
 out newsletters to the people on that list. It can work attached to the terminal 
@@ -26,10 +26,15 @@ Newsman can be installed from source for anyone familiar with that process,
 a database must also be constructed in order to complete the installation.
 The database schema can be found in the git repo under newsman.sql and 
 \textbf{MUST BE INSTALLED INTO A DATABASE BASED ON MYSQL} because at the moment 
-that's the only supported database type, i.e, mariadb. After installing 
-the package a config file should have been created called 
-.config/newsman/newsman.toml this file contains all the information
-needed by the program to work, this includes:
+that's the only supported database type, i.e, mariadb. After running the 
+program for the first time, newsman should prompt you to make config files in 
+.config/newsman these should be handled by the program prompting you. Newsman 
+will ask you if you want to use a default config that includes example values 
+to help you get started.
+
+\begin{align*}    
+    \includegraphics[width=0.5\textwidth]{images/newsmansetup.png}
+\end{align*}
 
 \begin{itemize}
     \item url: This is the database url, for example 
@@ -53,6 +58,7 @@ command:
     \item -a (Email) Adds an email to the mailing list.
     \item -r (Email) Removes an email from the mailing list.
     \item -j (Newsletter Name) Starts a mailing job for a specified newsletter. 
+    \item -u (Newsletter Name) Unassignes a mailing from for a specified newsletter.
     \item -t (Time) Time to delay the newsletter from being sent, defaults to 
         0 minutes.
     \item -e (Execute) Starts the mailing server, given true or false.
