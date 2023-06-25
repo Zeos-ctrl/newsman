@@ -138,7 +138,7 @@ fn first_time_setup() -> anyhow::Result<()>{
     std::fs::create_dir(format!("{}/.config/newsman", &home.display())).expect("failed to make newsman dir");
     std::fs::create_dir(format!("{}/.config/newsman/newsletters", &home.display())).expect("failed to make newsletter dir");
 
-    println!("Welcome to Newsman! There are no config files to this wizard will help you construct them.");
+    println!("Welcome to Newsman! There are no config files detected so this wizard will help you construct them.");
     println!("Would you like to use the default settings and edit them manually later? Y/n");
     let mut input = String::new();
     std::io::stdin().read_line(&mut input).expect("failed to read input");

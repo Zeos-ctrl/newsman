@@ -6,6 +6,7 @@ src/target
 src/newsman.service
 pkg
 /UserGuide/UserGuide.toc
+/UserGuide/UserGuide.dvi
 /UserGuide/UserGuide.aux
 /UserGuide/UserGuide.fls
 /UserGuide/UserGuide.log
