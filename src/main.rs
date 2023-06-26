@@ -1,6 +1,7 @@
 pub mod config;
 pub mod emails;
 pub mod job;
+pub mod server;
 
 extern crate daemonize;
 
@@ -11,6 +12,8 @@ use std::path::{Path, PathBuf};
 use env_logger::Builder;
 use clap::Parser;
 use log::{debug, LevelFilter};
+
+use warp;
 
 use crate::config::Config;
 
@@ -42,6 +45,10 @@ struct Args {
     #[arg(short)]
     execute: Option<bool>,
 
+    /// Starts a warp server to handle post requests for email signup, -w
+    #[arg(short)]
+    warp: Option<bool>,
+
     /// Run the program as a daemon, -d
     #[arg(short)]
     daemon: Option<bool>,
@@ -53,7 +60,6 @@ struct Args {
 
 async fn parse_cli(cli: Args) -> anyhow::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
-    let database: String = Config::load_config().unwrap().url;
 
     let delay: i64;
 
@@ -69,7 +75,7 @@ async fn parse_cli(cli: Args) -> anyhow::Result<()> {
 
     if let Some(email) = cli.add_email.as_deref() {
         debug!("{}", email);
-        let output: Result<String, String> = emails::add_email(email.to_string(), database.clone())
+        let output: Result<String, String> = emails::add_email(email.to_string())
             .await;
 
         match output {
@@ -80,7 +86,7 @@ async fn parse_cli(cli: Args) -> anyhow::Result<()> {
 
     if let Some(email) = cli.remove_email.as_deref() {
         debug!("{}", email);
-        let output: Result<String, String> = emails::remove_email(email.to_string(), database.clone())
+        let output: Result<String, String> = emails::remove_email(email.to_string())
             .await;
 
         match output {
@@ -208,6 +214,13 @@ async fn main() -> anyhow::Result<()>{
         _ => println!("Don't be crazy"),
     }
 
+    if let Some(true) = cli.warp {
+        debug!("spawning warp server...");
+        warp::serve(server::construct_route())
+            .run(([127, 0, 0, 1], 3600))
+            .await;
+    }
+
     if let Some(true) = cli.daemon {
         if ! Path::new("/tmp/newsman").is_dir() { // check if tmp dir doesn't exist 
             create_dir("/tmp/newsman").expect("Cannot write to tmp");
@@ -235,5 +248,6 @@ async fn main() -> anyhow::Result<()>{
     }else {
         parse_cli(cli).await.unwrap()
     }
+
     Ok(())
 }

@@ -1,14 +1,21 @@
+use serde::Deserialize;
+use uuid::Uuid;
 use sqlx::mysql::MySqlPoolOptions;
 
-#[derive(Clone)]
+use crate::Config;
+
+#[derive(Clone, Deserialize)]
 pub struct MailingList {
+    pub token: String,
     pub email: String,
 }
 
-pub async fn add_email(email: String, database: String) -> Result<String, String>{
+pub async fn add_email(email: String) -> Result<String, String>{
+    let config: Config = Config::load_config().unwrap();
+    let uuid = Uuid::new_v4();
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
-        .connect(&database)
+        .connect(&config.url)
         .await
         .expect("Cannot connect to database!");
 
@@ -24,7 +31,8 @@ pub async fn add_email(email: String, database: String) -> Result<String, String
         },
         Err(_) => {
             match sqlx::query!(r#"
-                               INSERT INTO mailing_list (email) VALUES (?)"#, 
+                               INSERT INTO mailing_list (token, email) VALUES (?,?)"#,
+                               uuid.to_string(),
                                email)
                 .execute(&pool)
                 .await {
@@ -35,10 +43,12 @@ pub async fn add_email(email: String, database: String) -> Result<String, String
     }
 }
 
-pub async fn remove_email(email: String, database: String) -> Result<String, String>{
+pub async fn remove_email(email: String) -> Result<String, String>{
+    let config: Config = Config::load_config().unwrap();
+
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
-        .connect(&database)
+        .connect(&config.url)
         .await
         .expect("Cannot connect to database!");
 

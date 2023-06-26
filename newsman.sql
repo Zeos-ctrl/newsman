@@ -3,6 +3,7 @@ CREATE DATABASE IF NOT EXISTS newsman;
 USE newsman;
 
 CREATE TABLE IF NOT EXISTS mailing_list (
+    token varchar(255) NOT NULL PRIMARY KEY,
     email varchar(255) NOT NULL
 );
 

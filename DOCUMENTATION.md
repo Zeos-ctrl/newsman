@@ -40,6 +40,7 @@ command:
 * -t <Time> Time to delay the newsletter from being sent, defaults to 0 minutes.
 * -e <Execute> Starts the mailing server, given true or false.
 * -d <Daemon> Runs the program as a daemon, given true or false. 
+* -w <Warp> Starts a warp server to listen for incoming post requests to add emails
 * --debug Turns debugging information on.
 * -h, --help <Help> Prints help.
 * -V, --version <Version> Prints version.
