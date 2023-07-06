@@ -106,8 +106,9 @@ async fn parse_cli(cli: Args) -> anyhow::Result<()> {
     }
 
     if let Some(job) = cli.job.as_deref() {
-        debug!("Executing job in {:?}s", &delay);
+        debug!("Assigning job {:?}s", &job);
         if let Some(subject) = cli.subject.as_deref() {
+            debug!("With the subject {:?}s", &subject);
             let output: Result<String, String> = job::add_job(job.to_string(), delay, subject.to_string())
                 .await;
 

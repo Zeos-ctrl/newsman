@@ -38,16 +38,6 @@
     },
     "query": "SELECT * from mailing_list"
   },
-  "02eb83adad0670875577f49ce12de1ca824b4421d0091e6f3bedbef896bedd86": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Right": 1
-      }
-    },
-    "query": "DELETE FROM mailing_list WHERE email = (?)"
-  },
   "25f46ecbf58e3efbb8f3dd6fc93098334356ae933113bc4f0e431a4459b37d3c": {
     "describe": {
       "columns": [
@@ -73,15 +63,15 @@
     },
     "query": "\n                              SELECT newsletter FROM jobs WHERE newsletter = (?)"
   },
-  "607bf93754d12ea068ed79f528ed2adc360a1b31ff0a737ce471939766526d51": {
+  "4c0ec248a1c89e6da2046e8213bf5a93477094ebbc75d182e5bf2671e16dd8b8": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
-        "Right": 2
+        "Right": 1
       }
     },
-    "query": "\n                               INSERT INTO jobs (newsletter, time) VALUES (?, ?)"
+    "query": "\n                               DELETE FROM mailing_list WHERE token = (?)"
   },
   "96ef8ea48e1a054a1dc024d0c2e1d326703628ddf4a6fa7196a45bd539267fc0": {
     "describe": {
@@ -109,9 +99,22 @@
             "max_size": 20,
             "type": "LongLong"
           }
+        },
+        {
+          "name": "subject",
+          "ordinal": 2,
+          "type_info": {
+            "char_set": 224,
+            "flags": {
+              "bits": 4097
+            },
+            "max_size": 1020,
+            "type": "VarString"
+          }
         }
       ],
       "nullable": [
+        false,
         false,
         false
       ],
@@ -120,16 +123,6 @@
       }
     },
     "query": "SELECT * FROM jobs"
-  },
-  "ba4374b90fc0272a64e4dd5284f9c4d3516280888dec88d84745f95517d105d4": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Right": 1
-      }
-    },
-    "query": "INSERT INTO mailing_list (email) VALUES (?)"
   },
   "bf69f87af4859a0232b9591171fcf49e15f2e9fddda03c8ff9a8b58376460b4b": {
     "describe": {
@@ -176,6 +169,16 @@
     },
     "query": "\n                               INSERT INTO mailing_list (token, email) VALUES (?,?)"
   },
+  "d72428c0736563031179c2d0d482bea24435121711ec0179587e1eaee1a93e78": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 3
+      }
+    },
+    "query": "\n                               INSERT INTO jobs (newsletter, time, subject) VALUES (?, ?, ?)"
+  },
   "e64714a3d6ac6f3aab23e61ebf6af8ce980058f46b697697475c4365034bad8d": {
     "describe": {
       "columns": [],
@@ -185,5 +188,30 @@
       }
     },
     "query": "\n                               DELETE FROM mailing_list WHERE email = (?)"
+  },
+  "e7ac145d5fb315f5f9dd8ba3ebb7a988309c54e3b5233d975078eeb2e485a9bc": {
+    "describe": {
+      "columns": [
+        {
+          "name": "email",
+          "ordinal": 0,
+          "type_info": {
+            "char_set": 224,
+            "flags": {
+              "bits": 4097
+            },
+            "max_size": 1020,
+            "type": "VarString"
+          }
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "\n                              SELECT email FROM mailing_list WHERE token = (?)"
   }
 }
