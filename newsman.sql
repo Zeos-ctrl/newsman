@@ -1,3 +1,4 @@
+DROP DATABASE IF EXISTS newsman;
 CREATE DATABASE IF NOT EXISTS newsman;
 
 USE newsman;
@@ -9,5 +10,6 @@ CREATE TABLE IF NOT EXISTS mailing_list (
 
 CREATE TABLE IF NOT EXISTS jobs (
     newsletter varchar(255) NOT NULL,
-    time BIGINT NOT NULL
+    time BIGINT NOT NULL,
+    subject varchar(255) NOT NULL
 );

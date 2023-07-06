@@ -41,6 +41,10 @@ struct Args {
     #[arg(short, value_name = "TIME")]
     time: Option<i64>,
 
+    /// Subject line for a mailing job, defaults to newsletter, -s [subject]
+    #[arg(short, value_name = "SUBJECT")]
+    subject: Option<String>,
+
     /// Starts a tokio server that automatically does jobs when the time comes, -e
     #[arg(short)]
     execute: Option<bool>,
@@ -103,13 +107,16 @@ async fn parse_cli(cli: Args) -> anyhow::Result<()> {
 
     if let Some(job) = cli.job.as_deref() {
         debug!("Executing job in {:?}s", &delay);
-        let output: Result<String, String> = job::add_job(job.to_string(), delay)
-            .await;
+        if let Some(subject) = cli.subject.as_deref() {
+            let output: Result<String, String> = job::add_job(job.to_string(), delay, subject.to_string())
+                .await;
 
-        match output {
-            Ok(output) => println!("{}", output),
-            Err(err) => println!("{}", err)
+            match output {
+                Ok(output) => println!("{}", output),
+                Err(err) => println!("{}", err)
+            }
         }
+
     }
 
     if let Some(unassign_job) = cli.unassign_job.as_deref() {
