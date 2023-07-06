@@ -13,9 +13,10 @@ use crate::emails::MailingList;
 struct Job {
     newsletter: String,
     time: i64,
+    subject: String,
 }
 
-pub async fn add_job(newsletter: String, delay: i64) -> Result<String, String>{
+pub async fn add_job(newsletter: String, delay: i64, subject: String) -> Result<String, String>{
     let config: Config = Config::load_config().unwrap();
 
     let pool = MySqlPoolOptions::new()
@@ -36,9 +37,10 @@ pub async fn add_job(newsletter: String, delay: i64) -> Result<String, String>{
         },
         Err(_) => {
             match sqlx::query!(r#"
-                               INSERT INTO jobs (newsletter, time) VALUES (?, ?)"#,
+                               INSERT INTO jobs (newsletter, time, subject) VALUES (?, ?, ?)"#,
                                newsletter,
-                               delay)
+                               delay,
+                               subject)
                 .execute(&pool)
                 .await {
                     Ok(_) => Ok(format!("successfully added job")),
@@ -77,7 +79,7 @@ pub async fn remove_job(newsletter: String) -> Result<String, String>{
     }
 }
 
-pub fn execute_job(newsletter: String, clients: &Vec<MailingList>) -> Result<(), ()> {
+pub fn execute_job(newsletter: String, subject: String, clients: &Vec<MailingList>) -> Result<(), ()> {
     let config: Config = Config::load_config().unwrap();
     
     let newsletter_string: String = std::fs::read_to_string(format!("{}{}",config.dir, newsletter.clone()))
@@ -91,7 +93,7 @@ pub fn execute_job(newsletter: String, clients: &Vec<MailingList>) -> Result<(),
         let email = Message::builder() 
             .from(config.sender.clone().parse().unwrap()) 
             .to(client.email.parse().unwrap()) 
-            .subject("Newsletter") 
+            .subject(subject.clone()) 
             .header(ContentType::TEXT_HTML)
             .body(format!("{}\n<a href=\"{}api/remove/{}\">Unsubscribe</a>",
                           newsletter_string.clone(), 
@@ -136,7 +138,7 @@ pub async fn execute_daemon(){
                         for newsletter in jobs {
                             if compare_time(newsletter.time){
                                 debug!("executing job: {}", newsletter.newsletter.clone());
-                                execute_job(newsletter.newsletter.clone(), &clients).unwrap();
+                                execute_job(newsletter.newsletter.clone(), newsletter.subject.clone(), &clients).unwrap();
                                 remove_job(newsletter.newsletter).await.unwrap();
                             }
                         };
