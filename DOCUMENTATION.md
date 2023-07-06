@@ -11,13 +11,7 @@ Newsman can be installed from source for anyone familiar with that process,
 a database must also be constructed in order to complete the installation.
 The database schema can be found in the git repo under newsman.sql and 
 MUST BE INSTALLED INTO A DATABASE BASED ON MYSQL, at the moment 
-that's the only supported database type, i.e, mariadb. After running the 
-program for the first time, newsman should prompt you to make config files in 
-~/.config/newsman these should be handled by the program prompting you. Newsman 
-will ask you if you want to use a default config that includes example values 
-to help you get started.
-
-![setup](./UserGuide/images/newsmansetup.png)
+that's the only supported database type, i.e, mariadb.
 
 * url: This is the database url, for example mysql://root:password@localhost/newsman 
 * dir: This is the directory the newsletters are stored in, it defaults to 
@@ -28,6 +22,7 @@ example@mail.com.
 * sender: Should be the same as smtp_username.
 * relay: Your smtp relay for example, mail.example.com.
 * interval: The interval in minutes that newsman will check if jobs need to be sent
+* api_endpoint: The endpoint for the warp server
 
 ## Usage
 Newsman comes with multiple flag options which can be found with the newsman -h 

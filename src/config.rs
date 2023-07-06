@@ -1,5 +1,4 @@
 use serde::{Serialize, Deserialize};
-use std::{path::PathBuf, fs::File, io::Write};
 use log::debug;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -10,7 +9,8 @@ pub struct Config {
     pub smtp_password: String,
     pub sender: String,
     pub relay: String,
-    pub interval: u64
+    pub interval: u64,
+    pub api_endpoint: String
 }
 
 impl Config {
@@ -22,7 +22,8 @@ impl Config {
             smtp_password: format!("example"),
             sender: format!("newsletter@example.com"),
             relay: format!("mail.example.com"),
-            interval: 0
+            interval: 0,
+            api_endpoint: format!("http://127.0.0.1:3600/api/remove/")
         }    
     }
 
@@ -47,18 +48,9 @@ impl Config {
         self.interval = interval;
     }
 
-    pub fn save_config(self){
-        let toml = toml::to_string(&self).expect("Failed turning config into toml");
-        let home: PathBuf = dirs::home_dir().expect("Cannot find home dir");
-        let mut file = File::create(format!("{}/.config/newsman/newsman.toml", home.display()))
-            .expect("Failed creating config file");
-        file.write_all(toml.as_bytes()).expect("Failed writing Default Config to file");
-    }
-
     pub fn load_config() -> Result<Config, ()> {
-        let home: PathBuf = dirs::home_dir().expect("Cannot find home dir");
-        let config_to_str: String = std::fs::read_to_string(format!("{}/.config/newsman/newsman.toml", home.display()))
-            .expect("There must be a config file in .config/newsman called newsman.toml");
+        let config_to_str: String = std::fs::read_to_string(format!("/etc/newsman/newsman.toml"))
+            .expect("There must be a config file in /etc/newsman called newsman.toml");
 
         let config: Result<Config, toml::de::Error> = toml::from_str(&config_to_str);
 

@@ -4,7 +4,9 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-ExecStart=/usr/bin/newsman --debug -d true -e true
+User=newsman
+ExecStart=/usr/bin/newsman --debug -w true
+Restart=always
 
 [Install]
 WantedBy=multi-user.target

@@ -8,7 +8,7 @@ extern crate daemonize;
 use chrono::Utc;
 use daemonize::Daemonize;
 use std::fs::{File, create_dir};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use env_logger::Builder;
 use clap::Parser;
 use log::{debug, LevelFilter};
@@ -112,9 +112,9 @@ async fn parse_cli(cli: Args) -> anyhow::Result<()> {
         }
     }
 
-    if let Some(job) = cli.job.as_deref() {
-        debug!("Unassinging job: {}", &job);
-        let output: Result<String, String> = job::remove_job(job.to_string())
+    if let Some(unassign_job) = cli.unassign_job.as_deref() {
+        debug!("Unassinging job: {}", &unassign_job);
+        let output: Result<String, String> = job::remove_job(unassign_job.to_string())
             .await;
 
         match output {
@@ -127,82 +127,10 @@ async fn parse_cli(cli: Args) -> anyhow::Result<()> {
 
 }
 
-fn first_time_setup() -> anyhow::Result<()>{
-    // setup wizard construct a config and save to file
-    let mut default_config: Config = Config::default();
-
-    let home: PathBuf = dirs::home_dir().expect("cannot get home dir");
-    match std::fs::read_dir(format!("{}/.config", &home.display())) {
-        Ok(_) => debug!(".config exists continuing setup"),
-        Err(_) => {
-            debug!(".config not found creating it now");
-            std::fs::create_dir(format!("{}/.config", &home.display()))
-                .expect("failed to make .config")
-        }
-    }
-
-    std::fs::create_dir(format!("{}/.config/newsman", &home.display())).expect("failed to make newsman dir");
-    std::fs::create_dir(format!("{}/.config/newsman/newsletters", &home.display())).expect("failed to make newsletter dir");
-
-    println!("Welcome to Newsman! There are no config files detected so this wizard will help you construct them.");
-    println!("Would you like to use the default settings and edit them manually later? Y/n");
-    let mut input = String::new();
-    std::io::stdin().read_line(&mut input).expect("failed to read input");
-    debug!("{}", &input);
-    input.pop();
-
-    if input.eq("Y") || input.eq("y") {
-        println!("Using default config, this can be edited in ~/.config/newsman/");
-        default_config.save_config();
-        Ok(())
-    } else {
-        println!("Enter the database url, e.g, mysql://root:password@localhost/newsman");
-        let mut url = String::new();
-        std::io::stdin().read_line(&mut url).expect("failed to read input");
-        url.pop();
-        default_config.set_url(url);
-
-        println!("Enter your smtp_username, e.g, example@example.com");
-        let mut smtp_username = String::new();
-        std::io::stdin().read_line(&mut smtp_username).expect("failed to read input");
-        smtp_username.pop();
-        default_config.set_smtp_username(smtp_username);
-
-        println!("Enter your smtp_password, e.g, 12345");
-        let mut smtp_password = String::new();
-        std::io::stdin().read_line(&mut smtp_password).expect("failed to read input");
-        smtp_password.pop();
-        default_config.set_smtp_password(smtp_password);
-
-        println!("Enter your smtp relay, e.g, mail.example.com");
-        let mut relay = String::new();
-        std::io::stdin().read_line(&mut relay).expect("failed to read input");
-        relay.pop();
-        default_config.set_relay(relay);
-
-        println!("Enter the time interval that the server should check for jobs to do in minuites");
-        let mut interval = String::new();
-        std::io::stdin().read_line(&mut interval).expect("failed to read input");
-        let x: u64 = interval.trim().parse().expect("Input not an integer");
-        default_config.set_interval(x);
-
-        println!("These are your settings:\n{:?}", &default_config);
-        default_config.save_config();
-        Ok(())
-    }
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()>{
     let cli = Args::parse();
     let mut builder = Builder::from_default_env();
-
-    let home: PathBuf = dirs::home_dir().expect("Cannot find home dir");
-
-    match std::fs::read_to_string(format!("{}/.config/newsman/newsman.toml", home.display())) {
-        Ok(_) => debug!("Configs are correct and made"),
-        Err(_) => first_time_setup().unwrap(),
-    }
 
     match cli.debug {
         0 => println!("Debug mode is off"),

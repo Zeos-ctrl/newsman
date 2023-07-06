@@ -26,15 +26,7 @@ Newsman can be installed from source for anyone familiar with that process,
 a database must also be constructed in order to complete the installation.
 The database schema can be found in the git repo under newsman.sql and 
 \textbf{MUST BE INSTALLED INTO A DATABASE BASED ON MYSQL} because at the moment 
-that's the only supported database type, i.e, mariadb. After running the 
-program for the first time, newsman should prompt you to make config files in 
-.config/newsman these should be handled by the program prompting you. Newsman 
-will ask you if you want to use a default config that includes example values 
-to help you get started.
-
-\begin{align*}    
-    \includegraphics[width=0.5\textwidth]{images/newsmansetup.png}
-\end{align*}
+that's the only supported database type, i.e, mariadb.
 
 \begin{itemize}
     \item url: This is the database url, for example 
@@ -48,6 +40,7 @@ to help you get started.
     \item relay: Your smtp relay for example, mail.example.com.
     \item interval: The interval in minutes that the server will check if jobs 
         need sending.
+    \item api\_endpoint: The warp endpoint for any api requests.
 \end{itemize}
 
 \section{Usage}

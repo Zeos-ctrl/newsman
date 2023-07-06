@@ -1,0 +1,9 @@
+#!/bin/sh
+
+post_install() {
+    useradd newsman
+}
+
+post_remove() {
+    userdel newsman
+}

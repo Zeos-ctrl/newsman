@@ -3,7 +3,7 @@ use serde::Deserialize;
 use warp::{http::StatusCode, Filter, self, body::content_length_limit};
 use log::debug;
 
-use crate::emails::{add_email, remove_email};
+use crate::emails::{add_email, remove_email_with_token};
 
 #[derive(Deserialize, Clone)]
 pub struct Email {
@@ -26,7 +26,7 @@ pub fn remove_email_route() -> impl Filter<Extract = impl warp::Reply, Error = w
 
 pub async fn handle_remove_email_get(token: String) -> Result<impl warp::Reply, Infallible> {
     debug!("handling email remove request...");
-    match remove_email(token).await {
+    match remove_email_with_token(token).await {
         Ok(_) => Ok(StatusCode::OK),
         Err(_) => Ok(StatusCode::BAD_REQUEST)
     }

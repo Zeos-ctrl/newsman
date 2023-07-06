@@ -75,6 +75,38 @@ pub async fn remove_email(email: String) -> Result<String, String>{
     }
 }
 
+pub async fn remove_email_with_token(token: String) -> Result<String, String>{
+    let config: Config = Config::load_config().unwrap();
+
+    let pool = MySqlPoolOptions::new()
+        .max_connections(5)
+        .connect(&config.url)
+        .await
+        .expect("Cannot connect to database!");
+
+    let exists = sqlx::query!(r#"
+                              SELECT email FROM mailing_list WHERE token = (?)"#,
+                              &token)
+        .fetch_one(&pool)
+        .await;
+
+    match exists {
+        Ok(_) => {
+            match sqlx::query!(r#"
+                               DELETE FROM mailing_list WHERE token = (?)"#,
+                               token)
+                .execute(&pool)
+                .await {
+                    Ok(_) => Ok(format!("Successfully removed email!")),
+                    Err(err) => Err(format!("Error removing email from database: {}", err)),
+                }
+        },
+        Err(_) => {
+            Err(format!("The email {} doesn't exist in the database", &token))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use sqlx::mysql::MySqlPoolOptions;

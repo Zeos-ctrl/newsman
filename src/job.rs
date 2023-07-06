@@ -80,6 +80,8 @@ pub async fn remove_job(newsletter: String) -> Result<String, String>{
 pub fn execute_job(newsletter: String, clients: &Vec<MailingList>) -> Result<(), ()> {
     let config: Config = Config::load_config().unwrap();
     
+    let newsletter_string: String = std::fs::read_to_string(format!("{}{}",config.dir, newsletter.clone()))
+        .expect("Cannot open newsletter to send");
     let creds = Credentials::new(config.smtp_username, config.smtp_password);
     let mailer = SmtpTransport::relay(&config.relay) 
         .unwrap() 
@@ -90,8 +92,11 @@ pub fn execute_job(newsletter: String, clients: &Vec<MailingList>) -> Result<(),
             .from(config.sender.clone().parse().unwrap()) 
             .to(client.email.parse().unwrap()) 
             .subject("Newsletter") 
-            .header(ContentType::TEXT_PLAIN)
-            .body(newsletter.clone()) 
+            .header(ContentType::TEXT_HTML)
+            .body(format!("{}\n<a href=\"{}api/remove/{}\">Unsubscribe</a>",
+                          newsletter_string.clone(), 
+                          config.api_endpoint.clone(),
+                          client.token)) 
             .unwrap(); 
         match mailer.send(&email) { 
               Ok(_) => debug!("Email sent successfully!"), 
