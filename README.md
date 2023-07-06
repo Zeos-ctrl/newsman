@@ -15,7 +15,7 @@ These are the current function that need to be written
 | Main function | :heavy_check_mark: |
 | systemd service | :heavy_check_mark: |
 | Store jobs in database | :heavy_check_mark: |
-| Automatically listen on port for email | :x: |
+| Automatically listen on port for email | :heavy_check_mark: |
 | Man Page | :x: |
 
 ## Documentation
