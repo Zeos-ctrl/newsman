@@ -152,9 +152,12 @@ async fn main() -> anyhow::Result<()>{
 
     if let Some(true) = cli.warp {
         debug!("spawning warp server...");
-        warp::serve(server::construct_route())
-            .run(([127, 0, 0, 1], 3600))
-            .await;
+        tokio::spawn(async {
+            warp::serve(server::construct_route())
+                .run(([127, 0, 0, 1], 3600))
+                .await;
+        });
+        debug!("Warp server running in a thread...");
     }
 
     if let Some(true) = cli.daemon {
