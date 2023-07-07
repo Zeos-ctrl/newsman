@@ -12,9 +12,12 @@ pub struct Email {
 
 pub async fn handle_email_post(email: Email) -> Result<impl warp::Reply, Infallible> {
     debug!("handling email post request...");
+    let config: Config = Config::load_config().unwrap();
+    let api: String = config.api_redirect.clone(); 
+    let redirect = warp::redirect(warp::http::Uri::from_maybe_shared(api).unwrap());
     match add_email(email.email).await {
-        Ok(_) => Ok(StatusCode::CREATED),
-        Err(_) => Ok(StatusCode::BAD_REQUEST)
+        Ok(_) => Ok(redirect),
+        Err(_) => Ok(redirect)
     }
 }
 
