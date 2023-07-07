@@ -10,7 +10,8 @@ pub struct Config {
     pub sender: String,
     pub relay: String,
     pub interval: u64,
-    pub api_endpoint: String
+    pub api_endpoint: String,
+    pub api_redirect: String
 }
 
 impl Config {
@@ -23,7 +24,8 @@ impl Config {
             sender: format!("newsletter@example.com"),
             relay: format!("mail.example.com"),
             interval: 0,
-            api_endpoint: format!("http://127.0.0.1:3600/api/remove/")
+            api_endpoint: format!("http://127.0.0.1:3600/api/remove/"),
+            api_redirect: format!("http://your.website.here/")
         }    
     }
 

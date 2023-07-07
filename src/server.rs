@@ -3,7 +3,7 @@ use serde::Deserialize;
 use warp::{http::StatusCode, Filter, self, body::content_length_limit};
 use log::debug;
 
-use crate::emails::{add_email, remove_email_with_token};
+use crate::{emails::{add_email, remove_email_with_token}, config::{self, Config}};
 
 #[derive(Deserialize, Clone)]
 pub struct Email {
@@ -26,9 +26,12 @@ pub fn remove_email_route() -> impl Filter<Extract = impl warp::Reply, Error = w
 
 pub async fn handle_remove_email_get(token: String) -> Result<impl warp::Reply, Infallible> {
     debug!("handling email remove request...");
+    let config: Config = Config::load_config().unwrap();
+    let api: String = config.api_redirect.clone(); 
+    let redirect = warp::redirect(warp::http::Uri::from_maybe_shared(api).unwrap());
     match remove_email_with_token(token).await {
-        Ok(_) => Ok(StatusCode::OK),
-        Err(_) => Ok(StatusCode::BAD_REQUEST)
+        Ok(_) => Ok(redirect),
+        Err(_) => Ok(redirect)
     }
 }
 

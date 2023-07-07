@@ -6,3 +6,4 @@ sender = "newsletter@example.com"
 relay = "mail.example.com"
 interval = 0
 api_endpoint = "http://127.0.0.1:3600/"
+api_redirect = "https://your.website.here"
