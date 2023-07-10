@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use uuid::Uuid;
 use sqlx::mysql::MySqlPoolOptions;
+use log::debug;
 
 use crate::Config;
 
@@ -8,6 +9,27 @@ use crate::Config;
 pub struct MailingList {
     pub token: String,
     pub email: String,
+}
+
+fn is_valid_email(email: String) -> bool {
+    let parsed = email
+        .split("@")
+        .collect::<Vec<&str>>();
+    if parsed.len() > 1 && parsed.len() < 3{
+        let domain = parsed[(parsed.len() -1)]
+            .split(".")
+            .collect::<Vec<&str>>();
+        if domain[0].is_empty() || domain.len() < 2{
+            debug!("{:?}", parsed);
+            false
+        }else {
+            debug!("{:?}", parsed);
+            true
+        }
+    } else {
+        debug!("{:?}", parsed);
+        false
+    }
 }
 
 pub async fn add_email(email: String) -> Result<String, String>{
@@ -30,6 +52,7 @@ pub async fn add_email(email: String) -> Result<String, String>{
            Ok(format!("Email already exists"))
         },
         Err(_) => {
+            if is_valid_email(email.clone()) {
             match sqlx::query!(r#"
                                INSERT INTO mailing_list (token, email) VALUES (?,?)"#,
                                uuid.to_string(),
@@ -39,7 +62,10 @@ pub async fn add_email(email: String) -> Result<String, String>{
                     Ok(_) => Ok(format!("Successfully added email!")),
                     Err(err) => Err(format!("Error adding email to database: {}", err)),
                 }
+            } else {
+                Err(format!("Email is invalid"))
             }
+        }
     }
 }
 
