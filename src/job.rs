@@ -17,7 +17,7 @@ struct Job {
 }
 
 pub async fn add_job(newsletter: String, delay: i64, subject: String) -> Result<String, String>{
-    let config: Config = Config::load_config().unwrap();
+    let config: Config = Config::load_config().expect("Cannot open config");
 
     let pool = MySqlPoolOptions::new()
         .max_connections(5)

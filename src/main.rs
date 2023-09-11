@@ -136,7 +136,7 @@ async fn parse_cli(cli: Args) -> anyhow::Result<()> {
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()>{
+pub async fn main() -> anyhow::Result<()>{
     let cli = Args::parse();
     let mut builder = Builder::from_default_env();
 

@@ -16,7 +16,7 @@ fn is_valid_email(email: String) -> bool {
         .split("@")
         .collect::<Vec<&str>>();
     if parsed.len() > 1 && parsed.len() < 3{
-        let domain = parsed[(parsed.len() -1)]
+        let domain = parsed[parsed.len() -1]
             .split(".")
             .collect::<Vec<&str>>();
         if domain[0].is_empty() || domain.len() < 2{
@@ -157,7 +157,7 @@ mod tests {
             .await
             .unwrap();
 
-        match sqlx::query!(r#"INSERT INTO mailing_list (email) VALUES (?)"#, format!("example@test.com"))
+        match sqlx::query!(r#"INSERT INTO mailing_list (token, email) VALUES (?,?)"#, format!("1"), format!("example@test.com"))
             .execute(&pool)
             .await {
                 Ok(_) => assert!(true),
@@ -173,12 +173,12 @@ mod tests {
             .await
             .unwrap();
 
-        sqlx::query!(r#"INSERT INTO mailing_list (email) VALUES (?)"#, format!("example@test.com"))
+        sqlx::query!(r#"INSERT INTO mailing_list (token, email) VALUES (?,?)"#, format!("2"), format!("example2@test.com"))
             .execute(&pool)
             .await
             .expect("ERROR ADDING TEST EMAIL");
 
-        match sqlx::query!(r#"DELETE FROM mailing_list WHERE email = (?)"#, format!("example@test.com"))
+        match sqlx::query!(r#"DELETE FROM mailing_list WHERE email = (?)"#, format!("example2@test.com"))
             .execute(&pool)
             .await {
                 Ok(_) => assert!(true),
